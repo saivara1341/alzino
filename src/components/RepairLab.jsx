@@ -1,0 +1,1018 @@
+import React, { useState, useMemo } from 'react';
+import { 
+  Wrench, 
+  Plus, 
+  Search, 
+  Printer, 
+  Clock, 
+  CheckCircle2, 
+  AlertCircle, 
+  Share2, 
+  Smartphone,
+  Lock,
+  ChevronRight,
+  Receipt,
+  FileText,
+  DollarSign,
+  Tag,
+  ShieldCheck,
+  Check,
+  User,
+  Phone
+} from 'lucide-react';
+
+export default function RepairLab({ 
+  repairJobs = [], 
+  setRepairJobs = () => {}, 
+  invoices = [],
+  setInvoices = () => {},
+  customers = [],
+  setCustomers = () => {},
+  shopConfig = {}, 
+  onPrintRepairSlip = () => {},
+  onPrintInvoice = () => {}
+}) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('All');
+
+  // Success toast
+  const [toastMessage, setToastMessage] = useState(null);
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
+  };
+
+  // =========================================================================
+  // 1. NEW JOB INTAKE STATE
+  // =========================================================================
+  const [customerName, setCustomerName] = useState('');
+  const [customerMobile, setCustomerMobile] = useState('');
+  const [deviceModel, setDeviceModel] = useState('');
+  const [color, setColor] = useState('');
+  const [screenLock, setScreenLock] = useState('PIN: 1234');
+  const [selectedIssues, setSelectedIssues] = useState([]);
+  const [customIssue, setCustomIssue] = useState('');
+  const [estimatedCost, setEstimatedCost] = useState('');
+  const [advancePaid, setAdvancePaid] = useState('0');
+  const [technician, setTechnician] = useState('Anwar (Master Tech)');
+
+  const commonIssues = [
+    'Touch Screen Broken',
+    'Blank / No Display',
+    'Battery Fast Draining',
+    'Charging Jack Dead',
+    'Ear Speaker Crackling',
+    'Mic Silent (Outgoing sound)',
+    'Water Damaged',
+    'Camera Lens Cracked',
+    'Software Dead Boot / Logo Hang',
+    'Network / SIM No Service'
+  ];
+
+  const statuses = ['All', 'Received', 'In Progress', 'Parts Awaiting', 'Ready for Delivery', 'Delivered'];
+
+  const toggleIssue = (issue) => {
+    setSelectedIssues(prev => 
+      prev.includes(issue) ? prev.filter(i => i !== issue) : [...prev, issue]
+    );
+  };
+
+  const handleCreateJob = (e) => {
+    e.preventDefault();
+    if (!customerName || !customerMobile || !deviceModel || !estimatedCost) {
+      alert("Please fill customer name, mobile, device model, and estimated cost.");
+      return;
+    }
+
+    const finalIssues = [...selectedIssues];
+    if (customIssue.trim()) finalIssues.push(customIssue.trim());
+
+    const est = parseFloat(estimatedCost);
+    const adv = parseFloat(advancePaid) || 0;
+    const balance = Math.max(0, est - adv);
+
+    const jobId = `ALZ-REP-${String(repairJobs.length + 1024)}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    const newJob = {
+      jobId,
+      date: today,
+      customerName: customerName.trim(),
+      customerMobile: customerMobile.trim(),
+      deviceModel: deviceModel.trim(),
+      color: color.trim(),
+      screenLock: screenLock.trim(),
+      issues: finalIssues.length > 0 ? finalIssues : ['General Servicing'],
+      technicianNotes: 'Device received at bench. Initial check completed.',
+      estimatedCost: est,
+      advancePaid: adv,
+      balanceDue: balance,
+      status: 'Received',
+      technician,
+    };
+
+    setRepairJobs(prev => [newJob, ...prev]);
+    setShowAddModal(false);
+
+    // Reset fields
+    setCustomerName('');
+    setCustomerMobile('');
+    setDeviceModel('');
+    setColor('');
+    setEstimatedCost('');
+    setAdvancePaid('0');
+    setSelectedIssues([]);
+    setCustomIssue('');
+
+    showToast(`Job ${jobId} registered for ${newJob.customerName}! Claim token generated.`);
+
+    // Trigger Print of Repair Token
+    onPrintRepairSlip(newJob);
+  };
+
+  // =========================================================================
+  // 2. GENERATE BILL MODAL STATE (PRE-FILLED CUSTOMER DATA)
+  // =========================================================================
+  const [billModalOpen, setBillModalOpen] = useState(false);
+  const [jobToBill, setJobToBill] = useState(null);
+  const [finalServicePrice, setFinalServicePrice] = useState('');
+  const [repairDescription, setRepairDescription] = useState('');
+  const [repairWarranty, setRepairWarranty] = useState('30 Days Display & Touch Warranty (No physical damage)');
+  const [repairBillingType, setRepairBillingType] = useState('non-gst'); // 'non-gst' or 'gst'
+  const [repairPaymentMode, setRepairPaymentMode] = useState('Cash');
+  const [repairNotes, setRepairNotes] = useState(
+    'Device tested and confirmed working. 30 days warranty on replaced components only. Physical or liquid damage voids warranty.'
+  );
+
+  const repairWarrantyPresets = [
+    '30 Days Display & Touch Warranty (No physical damage)',
+    '90 Days Motherboard & IC Hardware Warranty',
+    '60 Days Battery Replacement Warranty',
+    '15 Days General Testing Warranty',
+    '6 Months Comprehensive Service Warranty',
+    'No Warranty (Liquid / Water Damaged Board)'
+  ];
+
+  // Open Generate Bill Modal for a specific job
+  const handleOpenBillModal = (job) => {
+    setJobToBill(job);
+    setFinalServicePrice(String(job.estimatedCost || job.balanceDue || 500));
+    setRepairDescription(`${job.deviceModel} Repair: ${job.issues.join(', ')}`);
+    setRepairWarranty('30 Days Display & Touch Warranty (No physical damage)');
+    setRepairBillingType('non-gst');
+    setRepairPaymentMode('Cash');
+    setRepairNotes('Device tested and confirmed working. Keep bill for warranty claims.');
+    setBillModalOpen(true);
+  };
+
+  // Commit Bill & Generate Invoice
+  const handleGenerateRepairInvoice = (printFormat = 'thermal') => {
+    if (!jobToBill) return;
+
+    const finalPrice = parseFloat(finalServicePrice);
+    if (!finalPrice || finalPrice <= 0) {
+      alert("Please enter a valid final service amount.");
+      return;
+    }
+
+    const isNonGst = repairBillingType === 'non-gst';
+    const prefix = isNonGst ? 'ALZ-SRV' : 'ALZ-INV';
+    const invoiceNo = `${prefix}-${String(invoices.length + 201).padStart(4, '0')}`;
+    const today = new Date().toISOString().split('T')[0];
+
+    const advance = Number(jobToBill.advancePaid) || 0;
+    const netBalanceToCollect = Math.max(0, finalPrice - advance);
+    const actualPaid = repairPaymentMode === 'Khata' ? advance : finalPrice;
+    const khataDue = repairPaymentMode === 'Khata' ? netBalanceToCollect : 0;
+
+    // Construct official Invoice
+    const newInvoice = {
+      invoiceNo,
+      date: today,
+      isNonGst,
+      isRepairInvoice: true,
+      repairJobRef: jobToBill.jobId,
+      invoiceType: isNonGst ? 'Repair Service Cash Memo' : 'GST Tax Invoice (Service & Maintenance)',
+      customerName: jobToBill.customerName,
+      customerPhone: jobToBill.customerMobile,
+      customerAddress: 'Bodhan, Telangana',
+      customerGstin: '',
+      paymentMode: repairPaymentMode,
+      warrantyNotes: repairWarranty,
+      notes: `${repairNotes.trim()} [Intake Job: ${jobToBill.jobId} | Advance paid: ₹${advance}]`,
+      items: [
+        {
+          id: `SVC-${jobToBill.jobId}`,
+          name: repairDescription.trim() || `${jobToBill.deviceModel} Service`,
+          category: 'Repair Services',
+          hsn: '998713', // Official GST SAC code for mobile repairing & servicing
+          qty: 1,
+          imeis: jobToBill.screenLock ? [`Ref: ${jobToBill.jobId} • Lock: ${jobToBill.screenLock}`] : [`Ref: ${jobToBill.jobId}`],
+          rate: finalPrice,
+          buyPrice: Math.round(finalPrice * 0.4), // estimated parts cost
+          gstRate: isNonGst ? 0 : 18,
+          taxable: isNonGst ? finalPrice : parseFloat((finalPrice / 1.18).toFixed(2)),
+          total: finalPrice,
+          profit: Math.round(finalPrice * 0.6), // labor & profit margin
+          warranty: repairWarranty,
+          condition: `Repaired & Tested (${jobToBill.issues.join(', ')})`,
+        }
+      ],
+      taxableAmount: isNonGst ? finalPrice : parseFloat((finalPrice / 1.18).toFixed(2)),
+      cgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
+      sgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
+      igstTotal: 0,
+      discount: 0,
+      grandTotal: finalPrice,
+      paidAmount: actualPaid,
+      khataDue,
+      totalProfit: Math.round(finalPrice * 0.6),
+    };
+
+    // 1. Add to invoices
+    setInvoices(prev => [newInvoice, ...prev]);
+
+    // 2. Update repair job status to Delivered & record invoiceNo
+    setRepairJobs(prev => prev.map(job => {
+      if (job.jobId === jobToBill.jobId) {
+        return {
+          ...job,
+          status: 'Delivered',
+          balanceDue: 0,
+          invoiceNo: invoiceNo,
+          billedAt: finalPrice,
+          deliveredDate: today
+        };
+      }
+      return job;
+    }));
+
+    // 3. Update customer record
+    setCustomers(prev => {
+      const matchIndex = prev.findIndex(c => c.phone && c.phone.replace(/\D/g, '') === jobToBill.customerMobile.replace(/\D/g, ''));
+      if (matchIndex >= 0) {
+        const updated = [...prev];
+        updated[matchIndex] = {
+          ...updated[matchIndex],
+          totalSpent: (updated[matchIndex].totalSpent || 0) + finalPrice,
+          balanceDue: (updated[matchIndex].balanceDue || 0) + khataDue,
+        };
+        return updated;
+      } else {
+        const newCust = {
+          id: `CUST-${String(prev.length + 1).padStart(3, '0')}`,
+          name: jobToBill.customerName,
+          phone: jobToBill.customerMobile,
+          address: 'Bodhan, Telangana',
+          gstin: '',
+          totalSpent: finalPrice,
+          balanceDue: khataDue,
+        };
+        return [newCust, ...prev];
+      }
+    });
+
+    // Close modal
+    setBillModalOpen(false);
+    setJobToBill(null);
+
+    showToast(`Invoice ${invoiceNo} generated for ${jobToBill.customerName}! Device marked as Delivered.`);
+
+    // Trigger Print Invoice
+    onPrintInvoice(newInvoice, printFormat);
+  };
+
+  const updateStatus = (jobId, newStatus) => {
+    setRepairJobs(prev => prev.map(job => {
+      if (job.jobId === jobId) {
+        let newBalance = job.balanceDue;
+        if (newStatus === 'Delivered' && job.balanceDue > 0) {
+          const collect = confirm(`Collect remaining balance ₹${job.balanceDue} for ${job.deviceModel}?`);
+          if (collect) newBalance = 0;
+        }
+        return { ...job, status: newStatus, balanceDue: newBalance };
+      }
+      return job;
+    }));
+  };
+
+  const filteredJobs = useMemo(() => {
+    return repairJobs.filter(job => {
+      const matchesStatus = selectedStatusFilter === 'All' || job.status === selectedStatusFilter;
+      const q = searchTerm.toLowerCase().trim();
+      if (!q) return matchesStatus;
+      return (
+        matchesStatus && (
+          job.jobId.toLowerCase().includes(q) ||
+          job.customerName.toLowerCase().includes(q) ||
+          job.customerMobile.includes(q) ||
+          job.deviceModel.toLowerCase().includes(q) ||
+          (job.invoiceNo && job.invoiceNo.toLowerCase().includes(q))
+        )
+      );
+    });
+  }, [repairJobs, selectedStatusFilter, searchTerm]);
+
+  return (
+    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="animate-fade-in" style={{
+          padding: '0.65rem 1rem',
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--status-green-bg)',
+          border: '1px solid var(--status-green)',
+          color: 'var(--status-green)',
+          fontSize: '0.85rem',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+        }}>
+          <CheckCircle2 size={16} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Sleek Minimalist Title Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Repairing Lab & Diagnostics Bench</h2>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+            {repairJobs.filter(j => j.status !== 'Delivered').length} active bench jobs
+          </span>
+        </div>
+
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="btn-primary"
+          style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem' }}
+        >
+          <Plus size={15} />
+          <span>New Job Card</span>
+        </button>
+      </div>
+
+      {/* Filter Tabs & Search */}
+      <div className="illoca-card" style={{ padding: '0.85rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto' }}>
+          {statuses.map(st => {
+            const count = st === 'All' ? repairJobs.length : repairJobs.filter(j => j.status === st).length;
+            const isSelected = selectedStatusFilter === st;
+            return (
+              <button
+                key={st}
+                onClick={() => setSelectedStatusFilter(st)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: 'var(--radius-pill)',
+                  fontSize: '0.8rem',
+                  fontFamily: 'var(--font-heading)',
+                  fontWeight: isSelected ? 700 : 500,
+                  background: isSelected ? 'var(--accent-primary)' : 'var(--surface-primary)',
+                  color: isSelected ? '#FFFFFF' : 'var(--text-primary)',
+                  border: `1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  whiteSpace: 'nowrap',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>{st}</span>
+                <span style={{ 
+                  fontSize: '0.7rem', 
+                  fontFamily: 'var(--font-mono)', 
+                  background: isSelected ? 'rgba(255,255,255,0.25)' : 'var(--border-color)',
+                  padding: '0.05rem 0.35rem',
+                  borderRadius: '3px'
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ width: '280px' }}>
+          <input
+            type="text"
+            placeholder="Search Job ID, Mobile, Customer, Invoice..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="input-field"
+            style={{ fontSize: '0.85rem' }}
+          />
+        </div>
+      </div>
+
+      {/* Repair Cards Pipeline */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+        {filteredJobs.map(job => {
+          const isReady = job.status === 'Ready for Delivery';
+          const isDelivered = job.status === 'Delivered';
+          const isBilled = Boolean(job.invoiceNo);
+
+          return (
+            <div 
+              key={job.jobId} 
+              className="illoca-card" 
+              style={{ 
+                padding: '1.1rem',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                borderLeft: `4px solid ${
+                  isDelivered ? 'var(--status-green)' : 
+                  isReady ? 'var(--illoca-blue)' : 
+                  'var(--status-amber)'
+                }`
+              }}
+            >
+              <div>
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span className="mono-tag" style={{ fontSize: '0.8rem' }}>
+                      {job.jobId}
+                    </span>
+                    {isBilled && (
+                      <span className="mono-tag" style={{ background: 'var(--status-green-bg)', color: 'var(--status-green)', fontSize: '0.7rem', fontWeight: 700 }}>
+                        ✓ {job.invoiceNo}
+                      </span>
+                    )}
+                  </div>
+
+                  <select
+                    value={job.status}
+                    onChange={(e) => updateStatus(job.jobId, e.target.value)}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0.5rem',
+                      borderRadius: '4px',
+                      background: isDelivered ? 'var(--status-green-bg)' : isReady ? 'var(--illoca-blue-subtle)' : 'var(--status-amber-bg)',
+                      color: isDelivered ? 'var(--status-green)' : isReady ? 'var(--accent-primary)' : 'var(--status-amber)',
+                      border: '1px solid var(--border-color)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="Received">Received</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Parts Awaiting">Parts Awaiting</option>
+                    <option value="Ready for Delivery">Ready for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                  </select>
+                </div>
+
+                {/* Device & Customer Info */}
+                <div style={{ marginBottom: '0.6rem' }}>
+                  <h4 style={{ fontSize: '1.05rem', marginBottom: '0.2rem', fontWeight: 800 }}>
+                    {job.deviceModel} {job.color ? `(${job.color})` : ''}
+                  </h4>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                    Customer: <strong style={{ color: 'var(--text-primary)' }}>{job.customerName}</strong> ({job.customerMobile})
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Intake: {job.date} | Tech: {job.technician}
+                  </div>
+                </div>
+
+                {/* Lock info */}
+                {job.screenLock && (
+                  <div style={{ 
+                    background: 'var(--surface-primary)', 
+                    padding: '0.35rem 0.6rem', 
+                    borderRadius: '4px', 
+                    fontSize: '0.75rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.4rem',
+                    marginBottom: '0.6rem',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    <Lock size={12} color="var(--accent-primary)" />
+                    <span>Lock: {job.screenLock}</span>
+                  </div>
+                )}
+
+                {/* Issues Badges */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
+                  {job.issues.map((iss, i) => (
+                    <span key={i} style={{
+                      fontSize: '0.72rem',
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '3px',
+                      background: 'var(--border-color)',
+                      color: 'var(--text-primary)',
+                    }}>
+                      {iss}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Notes */}
+                {job.technicianNotes && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+                    "{job.technicianNotes}"
+                  </div>
+                )}
+              </div>
+
+              {/* Financial & Actions */}
+              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Est: ₹{job.estimatedCost}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--status-green)', marginLeft: '0.5rem' }}>Adv: ₹{job.advancePaid}</span>
+                  </div>
+                  <div>
+                    <span style={{ 
+                      fontFamily: 'var(--font-mono)', 
+                      fontWeight: 700, 
+                      fontSize: '0.9rem',
+                      color: job.balanceDue > 0 ? 'var(--status-red)' : 'var(--status-green)'
+                    }}>
+                      Due: ₹{job.balanceDue}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons Row with Generate Bill */}
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {/* GENERATE BILL BUTTON (PRE-FILLED WITH CUSTOMER & DEVICE) */}
+                  <button
+                    onClick={() => handleOpenBillModal(job)}
+                    className="btn-primary"
+                    style={{
+                      flex: 1.3,
+                      padding: '0.4rem 0.6rem',
+                      fontSize: '0.78rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.35rem'
+                    }}
+                    title="Generate official repair invoice with custom final price & warranty"
+                  >
+                    <Receipt size={14} />
+                    <span>{isBilled ? 'Re-generate Bill' : 'Generate Bill'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => onPrintRepairSlip(job)}
+                    className="btn-outline"
+                    style={{ padding: '0.4rem 0.6rem', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                    title="Print Claim Token Slip for customer"
+                  >
+                    <Printer size={13} />
+                    <span>Token</span>
+                  </button>
+
+                  {job.customerMobile && (
+                    <a
+                      href={`https://wa.me/91${job.customerMobile}?text=${encodeURIComponent(
+                        `Namaste ${job.customerName}, your mobile ${job.deviceModel} (Job ID: ${job.jobId}) status is: ${job.status}. Remaining Balance: Rs.${job.balanceDue}. ALZINO Bodhan.`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn-outline"
+                      style={{ padding: '0.4rem 0.55rem', color: '#10B981', display: 'flex', alignItems: 'center' }}
+                      title="Send WhatsApp Status to Customer"
+                    >
+                      <Share2 size={13} />
+                    </a>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL: GENERATE BILL / INVOICE FOR REPAIR (PRE-FILLED CUSTOMER DATA)      */}
+      {/* ========================================================================= */}
+      {billModalOpen && jobToBill && (
+        <div 
+          className="drawer-overlay" 
+          onClick={() => setBillModalOpen(false)}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 4000, padding: '1rem' }}
+        >
+          <div 
+            className="illoca-card animate-fade-in" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              maxWidth: '640px', 
+              width: '100%', 
+              maxHeight: '92vh', 
+              overflowY: 'auto',
+              padding: '1.5rem', 
+              background: 'var(--surface-primary)',
+              boxShadow: '0 20px 45px rgba(0,0,0,0.5)',
+              border: '1px solid var(--border-accent)'
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Receipt size={20} color="var(--accent-primary)" />
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
+                    Generate Repair Bill — {jobToBill.jobId}
+                  </h3>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Customer name & device details are pre-filled. Adjust final service price, parts, and warranty.
+                </div>
+              </div>
+              <button 
+                onClick={() => setBillModalOpen(false)}
+                style={{ fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)', border: 'none', background: 'transparent' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Pre-filled Customer & Device Summary Card */}
+            <div style={{
+              background: 'var(--surface-card)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.85rem 1rem',
+              marginBottom: '1rem'
+            }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Customer Details (From Intake)</div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)', marginTop: '0.1rem' }}>
+                    {jobToBill.customerName}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                    Phone: {jobToBill.customerMobile}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Device & Faults</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--accent-primary)', marginTop: '0.1rem' }}>
+                    {jobToBill.deviceModel} {jobToBill.color && `(${jobToBill.color})`}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                    Faults: {jobToBill.issues.join(', ')}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Final Price & Advance Adjustment */}
+            <div style={{
+              background: 'var(--illoca-blue-subtle)',
+              border: '1px solid var(--accent-primary)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.85rem 1rem',
+              display: 'grid',
+              gridTemplateColumns: '1.2fr 1fr',
+              gap: '1rem',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-primary)', display: 'block', marginBottom: '0.35rem' }}>
+                  Final Repair & Service Charges (₹) *
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontWeight: 800, color: 'var(--text-primary)' }}>₹</span>
+                  <input
+                    type="number"
+                    value={finalServicePrice}
+                    onChange={(e) => setFinalServicePrice(e.target.value)}
+                    required
+                    className="input-field"
+                    style={{
+                      paddingLeft: '1.75rem',
+                      fontSize: '1.15rem',
+                      fontWeight: 800,
+                      color: 'var(--text-primary)',
+                      background: 'var(--surface-primary)',
+                      borderColor: 'var(--accent-primary)'
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  Advance Paid at Intake: <strong>₹{jobToBill.advancePaid}</strong>
+                </div>
+                {(() => {
+                  const finalAmount = parseFloat(finalServicePrice) || 0;
+                  const adv = Number(jobToBill.advancePaid) || 0;
+                  const netDue = Math.max(0, finalAmount - adv);
+
+                  return (
+                    <div style={{ marginTop: '0.2rem' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Net Balance to Collect Now:</div>
+                      <div style={{
+                        fontSize: '1.2rem',
+                        fontWeight: 800,
+                        fontFamily: 'var(--font-mono)',
+                        color: netDue > 0 ? 'var(--status-green)' : 'var(--text-primary)'
+                      }}>
+                        ₹{netDue.toLocaleString()}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Service Title / Replaced Parts Description */}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.76rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                Service & Spare Parts Description (Printed on Invoice Item)
+              </label>
+              <input
+                type="text"
+                value={repairDescription}
+                onChange={(e) => setRepairDescription(e.target.value)}
+                placeholder="e.g. Display OLED Folder Replacement & OCA Lamination"
+                className="input-field"
+                style={{ fontSize: '0.84rem', fontWeight: 600 }}
+              />
+            </div>
+
+            {/* Warranty & Payment Configuration */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Repair Warranty Printed on Bill
+                </label>
+                <select
+                  value={repairWarranty}
+                  onChange={(e) => setRepairWarranty(e.target.value)}
+                  className="input-field"
+                  style={{ marginBottom: '0.35rem' }}
+                >
+                  {repairWarrantyPresets.map((w, idx) => (
+                    <option key={idx} value={w}>{w}</option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  placeholder="Or customize warranty terms..."
+                  value={repairWarranty}
+                  onChange={(e) => setRepairWarranty(e.target.value)}
+                  className="input-field"
+                  style={{ fontSize: '0.76rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Invoice Format
+                </label>
+                <select
+                  value={repairBillingType}
+                  onChange={(e) => setRepairBillingType(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="non-gst">Service Cash Memo (Non-GST)</option>
+                  <option value="gst">GST Tax Invoice (18% SAC 998713)</option>
+                </select>
+
+                <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginTop: '0.45rem', marginBottom: '0.25rem' }}>
+                  Payment Mode
+                </label>
+                <select
+                  value={repairPaymentMode}
+                  onChange={(e) => setRepairPaymentMode(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="Cash">Cash</option>
+                  <option value="UPI / PhonePe / GPay">UPI / PhonePe / GPay</option>
+                  <option value="Card">Debit / Credit Card</option>
+                  <option value="Khata">Khata (Customer Credit)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Repair Notes / Terms on Bill */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                Invoice Notes & Disclaimer (Printed on Bill)
+              </label>
+              <textarea
+                value={repairNotes}
+                onChange={(e) => setRepairNotes(e.target.value)}
+                rows={2}
+                className="input-field"
+                style={{ fontSize: '0.78rem', resize: 'vertical' }}
+              />
+            </div>
+
+            {/* Commit Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', borderTop: '1px solid var(--border-color)', paddingTop: '0.85rem' }}>
+              <button 
+                type="button" 
+                onClick={() => setBillModalOpen(false)}
+                className="btn-outline"
+                style={{ padding: '0.55rem 1rem' }}
+              >
+                Cancel
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => handleGenerateRepairInvoice('thermal')}
+                className="btn-primary"
+                style={{ padding: '0.55rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}
+              >
+                <Printer size={15} />
+                <span>Print Thermal Bill (80mm)</span>
+              </button>
+
+              <button 
+                type="button" 
+                onClick={() => handleGenerateRepairInvoice('a4')}
+                className="btn-primary"
+                style={{ padding: '0.55rem 1.1rem', display: 'flex', alignItems: 'center', gap: '0.45rem', background: '#10B981', borderColor: '#10B981' }}
+              >
+                <FileText size={15} />
+                <span>Print Official A4 Invoice</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Job Modal */}
+      {showAddModal && (
+        <div className="drawer-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 3000 }}>
+          <form onSubmit={handleCreateJob} className="illoca-card animate-fade-in" style={{ maxWidth: '580px', width: '100%', padding: '1.5rem', background: 'var(--surface-primary)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Wrench size={20} color="var(--accent-primary)" />
+                <h3 style={{ fontSize: '1.25rem', margin: 0 }}>New Repair Job Card</h3>
+              </div>
+              <button type="button" onClick={() => setShowAddModal(false)} className="btn-outline" style={{ padding: '0.2rem 0.5rem' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Customer Name *</label>
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  required
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Mobile Number *</label>
+                <input
+                  type="text"
+                  placeholder="10-digit Phone"
+                  value={customerMobile}
+                  onChange={(e) => setCustomerMobile(e.target.value)}
+                  required
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Device Make & Model *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Vivo V29 5G"
+                  value={deviceModel}
+                  onChange={(e) => setDeviceModel(e.target.value)}
+                  required
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Device Color / Appearance</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Himalayan Blue"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Screen Lock / Pattern / PIN</label>
+              <input
+                type="text"
+                placeholder="PIN: 1234 or Pattern description"
+                value={screenLock}
+                onChange={(e) => setScreenLock(e.target.value)}
+                className="input-field"
+                style={{ fontFamily: 'var(--font-mono)' }}
+              />
+            </div>
+
+            {/* Reported Faults */}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>Reported Problems / Faults</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                {commonIssues.map((iss, i) => {
+                  const isChecked = selectedIssues.includes(iss);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => toggleIssue(iss)}
+                      style={{
+                        padding: '0.4rem 0.6rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border: isChecked ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
+                        background: isChecked ? 'var(--illoca-blue-subtle)' : 'var(--surface-primary)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        color: isChecked ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                        fontWeight: isChecked ? 600 : 400,
+                      }}
+                    >
+                      {isChecked ? '✓ ' : '+ '} {iss}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <input
+                type="text"
+                placeholder="Other specific problem..."
+                value={customIssue}
+                onChange={(e) => setCustomIssue(e.target.value)}
+                className="input-field"
+                style={{ fontSize: '0.8rem' }}
+              />
+            </div>
+
+            {/* Financial Estimates */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '0.85rem', marginBottom: '1.25rem' }}>
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Estimated Cost (₹) *</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 1800"
+                  value={estimatedCost}
+                  onChange={(e) => setEstimatedCost(e.target.value)}
+                  required
+                  className="input-field"
+                  style={{ fontWeight: 700 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Advance Paid (₹)</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={advancePaid}
+                  onChange={(e) => setAdvancePaid(e.target.value)}
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Assign Technician</label>
+                <select
+                  value={technician}
+                  onChange={(e) => setTechnician(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="Anwar (Master Tech)">Anwar (Master Tech)</option>
+                  <option value="Srinivas (Display & Glass)">Srinivas (Display & Glass)</option>
+                  <option value="Mohsin (IC & Board)">Mohsin (IC & Board)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button type="button" onClick={() => setShowAddModal(false)} className="btn-outline">
+                Cancel
+              </button>
+              <button type="submit" className="btn-primary" style={{ padding: '0.65rem 1.25rem' }}>
+                <Printer size={16} />
+                <span>Save & Print Claim Token</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+    </div>
+  );
+}

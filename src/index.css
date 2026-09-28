@@ -1,0 +1,393 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Illoca SOTD Color Palette */
+  --illoca-blue: #3B60C5;
+  --illoca-blue-hover: #2F4FA8;
+  --illoca-blue-subtle: rgba(59, 96, 197, 0.12);
+  --illoca-blue-border: rgba(59, 96, 197, 0.28);
+  
+  --illoca-cream: #FDF2DE;
+  --illoca-cream-surface: #F7EBD3;
+  --illoca-cream-card: #F1E2C5;
+  --illoca-cream-border: #E0CFAE;
+  --illoca-cream-text: #23201B;
+  --illoca-cream-muted: #6E685C;
+
+  /* Dark Canvas (Obsidian Blueprint) */
+  --bg-dark: #0A0D14;
+  --surface-dark: #111622;
+  --surface-dark-card: #171E2E;
+  --surface-dark-hover: #1E273B;
+  --border-dark: rgba(253, 242, 222, 0.13);
+  --text-dark-primary: #FDF2DE;
+  --text-dark-secondary: #9FAAC1;
+  --text-dark-muted: #626F8A;
+
+  /* Status Colors */
+  --status-green: #10B981;
+  --status-green-bg: rgba(16, 185, 129, 0.15);
+  --status-amber: #F59E0B;
+  --status-amber-bg: rgba(245, 158, 11, 0.15);
+  --status-red: #EF4444;
+  --status-red-bg: rgba(239, 68, 68, 0.15);
+  --status-purple: #8B5CF6;
+  --status-purple-bg: rgba(139, 92, 246, 0.15);
+
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 9999px;
+
+  --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base Light Theme (Default: Illoca Warm Tracing Paper) */
+body.theme-cream {
+  --bg-main: var(--illoca-cream);
+  --surface-primary: var(--illoca-cream-surface);
+  --surface-card: #FFF9EE;
+  --surface-card-hover: #FFFFFF;
+  --border-color: var(--illoca-cream-border);
+  --border-accent: var(--illoca-blue);
+  --text-primary: var(--illoca-cream-text);
+  --text-secondary: var(--illoca-cream-muted);
+  --text-muted: #8E877A;
+  --accent-primary: var(--illoca-blue);
+  --accent-contrast: #FFFFFF;
+  --badge-bg: rgba(59, 96, 197, 0.1);
+  --badge-text: var(--illoca-blue);
+  --grid-dots: rgba(59, 96, 197, 0.07);
+}
+
+/* Dark Theme (Obsidian Architectural Blueprint) */
+body.theme-dark {
+  --bg-main: var(--bg-dark);
+  --surface-primary: var(--surface-dark);
+  --surface-card: var(--surface-dark-card);
+  --surface-card-hover: var(--surface-dark-hover);
+  --border-color: var(--border-dark);
+  --border-accent: var(--illoca-blue);
+  --text-primary: var(--text-dark-primary);
+  --text-secondary: var(--text-dark-secondary);
+  --text-muted: var(--text-dark-muted);
+  --accent-primary: var(--illoca-blue);
+  --accent-contrast: #FFFFFF;
+  --badge-bg: rgba(59, 96, 197, 0.22);
+  --badge-text: #96B4FF;
+  --grid-dots: rgba(253, 242, 222, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  background-image: radial-gradient(var(--grid-dots) 1px, transparent 1px);
+  background-size: 24px 24px;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Typography Helpers */
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary);
+}
+
+/* Common Interactive Elements */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  outline: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Illoca-style Card */
+.illoca-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: var(--transition-smooth);
+}
+.illoca-card:hover {
+  border-color: var(--border-accent);
+}
+
+/* Illoca Tactile Button */
+.btn-primary {
+  background: var(--accent-primary);
+  color: #FFFFFF;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-smooth);
+  box-shadow: 0 2px 4px rgba(59, 96, 197, 0.25);
+}
+.btn-primary:hover {
+  background: var(--illoca-blue-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(59, 96, 197, 0.35);
+}
+
+.btn-secondary {
+  background: var(--surface-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-smooth);
+}
+.btn-secondary:hover {
+  border-color: var(--border-accent);
+  background: var(--surface-card-hover);
+}
+
+.btn-outline {
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.85rem;
+  transition: var(--transition-smooth);
+}
+.btn-outline:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Input Fields */
+.input-field {
+  background: var(--surface-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  transition: var(--transition-smooth);
+  width: 100%;
+}
+.input-field:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--illoca-blue-subtle);
+}
+
+/* Minimalist Segmented Control */
+.segmented-bar {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+.segmented-item {
+  padding: 0.28rem 0.65rem;
+  font-size: 0.75rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  transition: var(--transition-smooth);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.segmented-item.active {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.segmented-item.active-blue {
+  background: var(--accent-primary);
+  color: #FFFFFF;
+}
+
+/* Minimal Table */
+.minimal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.minimal-table th {
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 600;
+}
+.minimal-table td {
+  padding: 0.75rem 0.85rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+.minimal-table tr:hover td {
+  background: var(--surface-primary);
+}
+
+/* Monospace Pill Badge */
+.mono-tag {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+}
+
+/* Pullout Drawer (Signature Illoca Feature) */
+.illoca-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 480px;
+  max-width: 95vw;
+  height: 100vh;
+  background: var(--surface-primary);
+  border-left: 1px solid var(--border-color);
+  box-shadow: -10px 0 35px rgba(0, 0, 0, 0.28);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+.illoca-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 13, 20, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 999;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    background-image: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-container {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* Quick Tools Header & Mobile Hero Responsive */
+.mobile-hero-tools {
+  display: none;
+}
+
+.desktop-nav-bar {
+  display: flex;
+}
+
+@media (max-width: 900px) {
+  .quick-tools-header-tagline {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .desktop-nav-bar {
+    display: none !important;
+  }
+  .mobile-hero-tools {
+    display: block;
+    padding: 0.75rem 1rem 0 1rem;
+  }
+  .quick-tools-header-btn {
+    padding: 0.35rem 0.55rem !important;
+  }
+  .quick-tools-header-btn > div {
+    display: none !important;
+  }
+}

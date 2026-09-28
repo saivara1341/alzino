@@ -421,7 +421,7 @@ export default function RepairLab({
       </div>
 
       {/* Repair Cards Pipeline */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '1rem' }}>
+      <div className="repair-jobs-grid">
         {filteredJobs.map(job => {
           const isReady = job.status === 'Ready for Delivery';
           const isDelivered = job.status === 'Delivered';

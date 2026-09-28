@@ -149,8 +149,8 @@ export default function Header({
               }}
             >
               <Search size={13} color="var(--accent-primary)" />
-              <span style={{ color: 'var(--text-secondary)' }}>Search</span>
-              <kbd style={{ 
+              <span className="hide-on-mobile" style={{ color: 'var(--text-secondary)' }}>Search</span>
+              <kbd className="hide-on-mobile" style={{ 
                 background: 'var(--surface-card)', 
                 padding: '0.05rem 0.3rem', 
                 borderRadius: '3px', 
@@ -467,6 +467,72 @@ export default function Header({
           </div>
         </div>
       )}
+
+      {/* Mobile Bottom Navigation Bar (Fixed at bottom on phones/tablets <= 768px) */}
+      <nav className="mobile-bottom-nav no-print">
+        <button
+          onClick={() => setActiveTab('pos')}
+          className={`mobile-bottom-item ${activeTab === 'pos' ? 'active' : ''}`}
+        >
+          <ShoppingCart size={18} />
+          <span>POS</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('inventory')}
+          className={`mobile-bottom-item ${activeTab === 'inventory' ? 'active' : ''}`}
+        >
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <Package size={18} />
+            {lowStockCount > 0 && (
+              <span className="mobile-nav-badge">{lowStockCount}</span>
+            )}
+          </div>
+          <span>Stock</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('used-phones')}
+          className={`mobile-bottom-item ${activeTab === 'used-phones' ? 'active' : ''}`}
+        >
+          <Smartphone size={18} />
+          <span>Used</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('repairs')}
+          className={`mobile-bottom-item ${activeTab === 'repairs' ? 'active' : ''}`}
+        >
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <Wrench size={18} />
+            {pendingRepairsCount > 0 && (
+              <span className="mobile-nav-badge">{pendingRepairsCount}</span>
+            )}
+          </div>
+          <span>Repairs</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`mobile-bottom-item ${activeTab === 'invoices' ? 'active' : ''}`}
+        >
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <FileText size={18} />
+            {invoicesCount > 0 && (
+              <span className="mobile-nav-badge">{invoicesCount}</span>
+            )}
+          </div>
+          <span>Invoices</span>
+        </button>
+
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className={`mobile-bottom-item ${menuOpen ? 'active' : ''}`}
+        >
+          <Menu size={18} />
+          <span>More</span>
+        </button>
+      </nav>
     </>
   );
 }

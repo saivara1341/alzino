@@ -673,7 +673,7 @@ export default function PosBilling({
       {/* 1. ACTIVE BILLING REGISTER COUNTER                                        */}
       {/* ========================================================================= */}
       {activePosTab === 'register' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.25rem' }}>
+        <div className="pos-register-grid">
           
           {/* Left: Product Catalog & Fast Search */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -785,10 +785,7 @@ export default function PosBilling({
             </div>
 
             {/* Product Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-              gap: '0.65rem',
+            <div className="pos-product-catalog-grid" style={{
               maxHeight: 'calc(100vh - 250px)',
               overflowY: 'auto',
               paddingRight: '0.25rem'

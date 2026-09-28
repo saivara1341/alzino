@@ -387,11 +387,161 @@ input, select, textarea {
   display: none !important;
 }
 
+/* Hide on mobile utility */
+.hide-on-mobile {
+  display: inline;
+}
+
+/* POS & Catalog Responsive Grids */
+.pos-register-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.25rem;
+}
+
+.pos-product-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.65rem;
+}
+
+.repair-jobs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1rem;
+}
+
+/* Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 58px;
+  background: #000000;
+  border-top: 1px solid #1E2330;
+  z-index: 1000;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.25rem;
+}
+
+.mobile-bottom-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  color: #94A3B8;
+  font-size: 0.68rem;
+  font-family: var(--font-heading);
+  font-weight: 500;
+  padding: 0.35rem 0;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.mobile-bottom-item.active {
+  color: var(--accent-primary);
+  font-weight: 700;
+}
+
+.mobile-bottom-item:active {
+  transform: scale(0.94);
+}
+
+.mobile-nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -8px;
+  background: var(--accent-primary);
+  color: #FFFFFF;
+  font-size: 0.58rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 999px;
+  line-height: 1;
+}
+
+/* Global Responsive Breakpoints */
+@media (max-width: 960px) {
+  .pos-register-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
 @media (max-width: 768px) {
+  /* Navigation Bar Adaptations */
   .desktop-nav-bar {
     display: none !important;
   }
   .mobile-only-menu-btn {
     display: inline-flex !important;
+  }
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+  .hide-on-mobile {
+    display: none !important;
+  }
+  
+  /* Space for bottom nav bar */
+  main {
+    padding-bottom: 68px !important;
+  }
+
+  /* Padding adjustments */
+  .illoca-card {
+    padding: 0.75rem !important;
+  }
+
+  /* Input fields: at least 16px to prevent iOS auto-zoom */
+  .input-field {
+    font-size: 16px !important;
+  }
+
+  /* Responsive Multi-column Form & Card Grids (Attribute matchers) */
+  div[style*="grid-template-columns: 1.2fr 1fr"],
+  div[style*="grid-template-columns: 1.1fr 1fr"],
+  div[style*="grid-template-columns: 1.2fr 0.9fr"],
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr 1.2fr"],
+  div[style*="grid-template-columns: 2fr 1fr 1fr"],
+  div[style*="grid-template-columns: repeat(3, 1fr)"],
+  div[style*="grid-template-columns: repeat(4, 1fr)"] {
+    grid-template-columns: 1fr !important;
+    gap: 0.65rem !important;
+  }
+
+  /* Modal Dialogues on mobile */
+  .animate-fade-in > div[style*="position: fixed"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .pos-product-catalog-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 0.45rem !important;
+  }
+
+  .repair-jobs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Metric cards grid */
+  div[style*="repeat(auto-fit, minmax(210px, 1fr))"],
+  div[style*="repeat(auto-fit, minmax(200px, 1fr))"] {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    gap: 0.5rem !important;
   }
 }

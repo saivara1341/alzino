@@ -88,6 +88,16 @@ body.theme-dark {
   padding: 0;
 }
 
+html, body, #root {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--bg-main);
@@ -95,11 +105,26 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  min-height: 100vh;
   background-image: radial-gradient(var(--grid-dots) 1px, transparent 1px);
   background-size: 24px 24px;
-  overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+header {
+  width: 100% !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+.header-content-inner {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0.45rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 /* Typography Helpers */
@@ -469,6 +494,46 @@ input, select, textarea {
   line-height: 1;
 }
 
+/* Main Menu Drawer (Full screen coverage top-to-bottom on mobile) */
+.main-menu-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  height: 100dvh;
+  min-height: 100vh;
+  background: var(--surface-primary);
+  display: flex;
+  flex-direction: column;
+  z-index: 1200;
+  overflow: hidden;
+}
+
+@media (min-width: 769px) {
+  .main-menu-drawer {
+    width: 340px !important;
+    max-width: 85vw !important;
+    right: auto !important;
+    border-right: 1px solid var(--border-color);
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* App Module Container */
+.app-module-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Global Responsive Breakpoints */
 @media (max-width: 960px) {
   .pos-register-grid {
@@ -478,6 +543,14 @@ input, select, textarea {
 }
 
 @media (max-width: 768px) {
+  .header-content-inner {
+    padding: 0.4rem 0.65rem !important;
+  }
+
+  .app-module-container {
+    padding: 0.65rem 0.5rem !important;
+  }
+
   /* Navigation Bar Adaptations */
   .desktop-nav-bar {
     display: none !important;

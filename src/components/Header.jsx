@@ -71,14 +71,11 @@ export default function Header({
         top: 0,
         zIndex: 100,
         backdropFilter: 'blur(16px)',
+        width: '100%',
+        maxWidth: '100vw',
+        boxSizing: 'border-box'
       }}>
-        <div style={{
-          padding: '0.45rem 1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-        }}>
+        <div className="header-content-inner">
           {/* Left: 3 Lines Menu Button + Brand + Active Screen Indicator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {/* 3 Lines Hamburger Menu Button (Mobile Only - Hidden on Desktop) */}
@@ -281,22 +278,8 @@ export default function Header({
           style={{ zIndex: 1100 }}
         >
           <div 
-            className="animate-fade-in"
+            className="main-menu-drawer animate-fade-in"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '310px',
-              maxWidth: '85vw',
-              height: '100vh',
-              background: 'var(--surface-primary)',
-              borderRight: '1px solid var(--border-color)',
-              boxShadow: '10px 0 40px rgba(0,0,0,0.25)',
-              display: 'flex',
-              flexDirection: 'column',
-              zIndex: 1200,
-            }}
           >
             {/* Menu Header */}
             <div style={{

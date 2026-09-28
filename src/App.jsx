@@ -143,7 +143,7 @@ export default function App() {
   const pendingRepairsCount = repairJobs.filter(j => j.status !== 'Delivered').length;
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: '100%', overflowX: 'hidden' }}>
       
       {/* Header */}
       <Header
@@ -160,7 +160,7 @@ export default function App() {
       />
 
       {/* Main Tab Content */}
-      <main style={{ flex: 1 }}>
+      <main style={{ flex: 1, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         {activeTab === 'pos' && (
           <PosBilling
             inventory={inventory}

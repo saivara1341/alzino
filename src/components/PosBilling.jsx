@@ -584,19 +584,22 @@ export default function PosBilling({
   }, [invoices, invoiceSearchTerm]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', padding: '1.25rem' }}>
+    <div className="app-module-container">
       
       {/* Top Header & Sub-Navigation */}
       <div style={{
         background: 'var(--surface-card)',
-        padding: '0.65rem 1.25rem',
+        padding: '0.65rem 1rem',
         borderRadius: 'var(--radius-md)',
         border: '1px solid var(--border-color)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        gap: '0.75rem'
+        gap: '0.75rem',
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{
@@ -676,12 +679,12 @@ export default function PosBilling({
         <div className="pos-register-grid">
           
           {/* Left: Product Catalog & Fast Search */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
             
             {/* Search & Mode Bar */}
-            <div className="illoca-card" style={{ padding: '0.75rem' }}>
-              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: 1 }}>
+            <div className="illoca-card" style={{ padding: '0.75rem', width: '100%', boxSizing: 'border-box' }}>
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: '1 1 200px', minWidth: 0 }}>
                   <Search 
                     size={16} 
                     style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} 
@@ -689,12 +692,12 @@ export default function PosBilling({
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="Search model, brand, barcode, or IMEI (e.g. 'iphone', 'cable', 'samsung')..."
+                    placeholder="Search model, brand, IMEI (e.g. 'iphone', 'cable')..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     onKeyDown={handleSearchKeyDown}
                     className="input-field"
-                    style={{ paddingLeft: '2.2rem', paddingRight: searchTerm ? '2rem' : '0.75rem', height: '36px', fontSize: '0.84rem' }}
+                    style={{ minWidth: 0, width: '100%', boxSizing: 'border-box', paddingLeft: '2.2rem', paddingRight: searchTerm ? '2rem' : '0.75rem', height: '36px', fontSize: '0.84rem' }}
                     autoFocus
                   />
                   {searchTerm && (

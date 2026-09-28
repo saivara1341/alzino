@@ -55,7 +55,13 @@ export default function RepairLab({
   const [customIssue, setCustomIssue] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
   const [advancePaid, setAdvancePaid] = useState('0');
+  const [techniciansList, setTechniciansList] = useState([
+    'Anwar (Master Tech)',
+    'Srinivas (Display & Glass)',
+    'Mohsin (IC & Board)'
+  ]);
   const [technician, setTechnician] = useState('Anwar (Master Tech)');
+  const [customTechnician, setCustomTechnician] = useState('');
 
   const commonIssues = [
     'Touch Screen Broken',
@@ -109,8 +115,12 @@ export default function RepairLab({
       advancePaid: adv,
       balanceDue: balance,
       status: 'Received',
-      technician,
+      technician: technician === 'Other' ? (customTechnician.trim() || 'Other') : technician,
     };
+
+    if (technician === 'Other' && customTechnician.trim() && !techniciansList.includes(customTechnician.trim())) {
+      setTechniciansList(prev => [...prev, customTechnician.trim()]);
+    }
 
     setRepairJobs(prev => [newJob, ...prev]);
     setShowAddModal(false);
@@ -124,6 +134,8 @@ export default function RepairLab({
     setAdvancePaid('0');
     setSelectedIssues([]);
     setCustomIssue('');
+    setCustomTechnician('');
+    setTechnician('Anwar (Master Tech)');
 
     showToast(`Job ${jobId} registered for ${newJob.customerName}! Claim token generated.`);
 
@@ -987,16 +999,31 @@ export default function RepairLab({
               </div>
 
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Assign Technician</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
+                  Assign Technician
+                </label>
                 <select
                   value={technician}
                   onChange={(e) => setTechnician(e.target.value)}
                   className="input-field"
+                  style={{ marginBottom: technician === 'Other' ? '0.35rem' : '0' }}
                 >
-                  <option value="Anwar (Master Tech)">Anwar (Master Tech)</option>
-                  <option value="Srinivas (Display & Glass)">Srinivas (Display & Glass)</option>
-                  <option value="Mohsin (IC & Board)">Mohsin (IC & Board)</option>
+                  {techniciansList.map(tech => (
+                    <option key={tech} value={tech}>{tech}</option>
+                  ))}
+                  <option value="Other">+ Other (Add New Technician)</option>
                 </select>
+
+                {technician === 'Other' && (
+                  <input
+                    type="text"
+                    placeholder="Enter technician name..."
+                    value={customTechnician}
+                    onChange={(e) => setCustomTechnician(e.target.value)}
+                    className="input-field"
+                    autoFocus
+                  />
+                )}
               </div>
             </div>
 

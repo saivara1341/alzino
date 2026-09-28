@@ -47,7 +47,7 @@ export default function Header({
   const navItems = [
     { id: 'pos', label: 'POS Billing', icon: ShoppingCart, hotkey: 'F2' },
     { id: 'inventory', label: 'Stock & IMEIs', icon: Package, count: lowStockCount || 5, alert: lowStockCount > 0 },
-    { id: 'used-phones', label: 'Used KYC', icon: Smartphone, badge: 'Aadhaar' },
+    { id: 'used-phones', label: 'Used or Refurbished Mobiles', icon: Smartphone, badge: 'Aadhaar' },
     { id: 'repairs', label: 'Repairs', icon: Wrench, count: pendingRepairsCount !== undefined && pendingRepairsCount !== null ? pendingRepairsCount : 2 },
     { id: 'invoices', label: 'Invoices', icon: FileText, count: invoicesCount !== undefined && invoicesCount !== null ? invoicesCount : 4 },
     { id: 'barcodes', label: 'Barcodes', icon: Barcode },

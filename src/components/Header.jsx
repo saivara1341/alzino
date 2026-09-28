@@ -195,28 +195,11 @@ export default function Header({
             {/* Quick Tools & Bench Drawer in Header */}
             <button 
               onClick={openPullout}
-              className="btn-secondary quick-tools-header-btn"
-              style={{ 
-                padding: '0.3rem 0.65rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.45rem',
-                border: '1px solid var(--border-color)',
-                background: 'var(--surface-card)',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer'
-              }}
-              title="Quick Tools & Bench Drawer — Inspired by Illoca Architectural Engine UI"
+              className="btn-secondary"
+              style={{ padding: '0.35rem 0.55rem' }}
+              title="Quick Tools & Bench Drawer"
             >
               <SlidersHorizontal size={14} color="var(--accent-primary)" />
-              <div style={{ textAlign: 'left', lineHeight: 1.15 }}>
-                <div style={{ fontSize: '0.74rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
-                  Quick Tools & Bench Drawer
-                </div>
-                <div className="quick-tools-header-tagline" style={{ fontSize: '0.6rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>
-                  Inspired by Illoca Architectural Engine UI
-                </div>
-              </div>
             </button>
 
             {/* Theme Switcher */}

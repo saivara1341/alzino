@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
 import Header from './components/Header';
 import PosBilling from './components/PosBilling';
 import UsedMobileModule from './components/UsedMobileModule';
@@ -162,51 +161,6 @@ export default function App() {
 
       {/* Main Tab Content */}
       <main style={{ flex: 1 }}>
-        {/* Mobile View Hero Section: Quick Tools & Bench Drawer */}
-        <div className="mobile-hero-tools no-print">
-          <div 
-            onClick={() => setIsPulloutOpen(true)}
-            className="illoca-card" 
-            style={{ 
-              padding: '0.85rem 1rem', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-              borderLeft: '4px solid var(--accent-primary)',
-              background: 'var(--surface-card)',
-              marginBottom: '1rem',
-              gap: '0.75rem'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <div style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                background: 'var(--illoca-blue-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--accent-primary)',
-                flexShrink: 0
-              }}>
-                <SlidersHorizontal size={18} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '0.92rem', fontFamily: 'var(--font-heading)', color: 'var(--text-primary)', lineHeight: 1.2 }}>
-                  Quick Tools & Bench Drawer
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-                  Inspired by Illoca Architectural Engine UI
-                </div>
-              </div>
-            </div>
-            <span className="btn-primary" style={{ padding: '0.35rem 0.65rem', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
-              Open Bench →
-            </span>
-          </div>
-        </div>
         {activeTab === 'pos' && (
           <PosBilling
             inventory={inventory}

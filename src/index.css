@@ -382,8 +382,16 @@ input, select, textarea {
   transform: translateY(-1px);
 }
 
+/* Mobile-only Menu Button in Header (hidden on Desktop) */
+.mobile-only-menu-btn {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
   .desktop-nav-bar {
     display: none !important;
+  }
+  .mobile-only-menu-btn {
+    display: inline-flex !important;
   }
 }

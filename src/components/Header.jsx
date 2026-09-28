@@ -84,20 +84,19 @@ export default function Header({
         }}>
           {/* Left: 3 Lines Menu Button + Brand + Active Screen Indicator */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            {/* 3 Lines Hamburger Menu Button */}
+            {/* 3 Lines Hamburger Menu Button (Mobile Only - Hidden on Desktop) */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="btn-secondary"
+              className="btn-secondary mobile-only-menu-btn"
               style={{
                 padding: '0.4rem 0.55rem',
-                display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
                 border: '1px solid var(--border-color)',
                 background: menuOpen ? 'var(--illoca-blue-subtle)' : 'var(--surface-card)',
                 color: menuOpen ? 'var(--accent-primary)' : 'var(--text-primary)',
               }}
-              title="Open Main Menu (3 Lines)"
+              title="Open Main Menu"
             >
               <Menu size={18} />
               <span style={{ fontSize: '0.78rem', fontWeight: 700, fontFamily: 'var(--font-heading)' }}>

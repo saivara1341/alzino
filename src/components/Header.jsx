@@ -57,9 +57,6 @@ export default function Header({
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 
-  const currentItem = navItems.find(item => item.id === activeTab) || navItems[0];
-  const CurrentIcon = currentItem.icon;
-
   const handleSelectTab = (id) => {
     setActiveTab(id);
     setMenuOpen(false);
@@ -133,34 +130,7 @@ export default function Header({
               </span>
             </div>
 
-            {/* Active Screen Breadcrumb */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.2rem 0.6rem',
-              borderRadius: 'var(--radius-sm)',
-              background: 'var(--surface-card)',
-              border: '1px solid var(--border-color)',
-            }}>
-              <CurrentIcon size={13} color="var(--accent-primary)" />
-              <span style={{ fontSize: '0.76rem', fontWeight: 700, fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}>
-                {currentItem.label}
-              </span>
-              {currentItem.count && (
-                <span style={{
-                  fontSize: '0.62rem',
-                  padding: '0.05rem 0.35rem',
-                  borderRadius: '999px',
-                  background: currentItem.alert ? 'var(--status-amber)' : 'var(--accent-primary)',
-                  color: currentItem.alert ? '#000' : '#FFF',
-                  fontFamily: 'var(--font-mono)',
-                  fontWeight: 700,
-                }}>
-                  {currentItem.count}
-                </span>
-              )}
-            </div>
+            {/* End of Left Brand Mark */}
           </div>
 
           {/* Right Actions: Minimalist & Clean */}

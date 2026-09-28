@@ -361,9 +361,25 @@ input, select, textarea {
   }
 }
 
-/* Responsive Navigation */
+/* Responsive Navigation Bar (Centered with Sleek Black Background) */
 .desktop-nav-bar {
   display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #000000 !important;
+  border-top: 1px solid #1E2330 !important;
+  border-bottom: 1px solid #1E2330 !important;
+}
+
+.desktop-nav-btn {
+  transition: var(--transition-smooth);
+}
+
+.desktop-nav-btn:hover:not(.active) {
+  background: #1B2130 !important;
+  color: #FFFFFF !important;
+  border-color: #374151 !important;
+  transform: translateY(-1px);
 }
 
 @media (max-width: 768px) {

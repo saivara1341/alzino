@@ -48,8 +48,8 @@ export default function Header({
     { id: 'pos', label: 'POS Billing', icon: ShoppingCart, hotkey: 'F2' },
     { id: 'inventory', label: 'Stock & IMEIs', icon: Package, count: lowStockCount || 5, alert: lowStockCount > 0 },
     { id: 'used-phones', label: 'Used KYC', icon: Smartphone, badge: 'Aadhaar' },
-    { id: 'repairs', label: 'Repairs', icon: Wrench, count: pendingRepairsCount || 2 },
-    { id: 'invoices', label: 'Invoices', icon: FileText, count: invoicesCount || 0 },
+    { id: 'repairs', label: 'Repairs', icon: Wrench, count: pendingRepairsCount !== undefined && pendingRepairsCount !== null ? pendingRepairsCount : 2 },
+    { id: 'invoices', label: 'Invoices', icon: FileText, count: invoicesCount !== undefined && invoicesCount !== null ? invoicesCount : 4 },
     { id: 'barcodes', label: 'Barcodes', icon: Barcode },
     { id: 'khata', label: 'Khata', icon: Users },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
@@ -232,12 +232,14 @@ export default function Header({
 
         {/* Desktop View Navigation Buttons Bar Below Header */}
         <div className="desktop-nav-bar" style={{
-          borderTop: '1px solid var(--border-color)',
-          background: 'var(--surface-card)',
-          padding: '0.35rem 1.25rem',
+          borderTop: '1px solid #1E2330',
+          borderBottom: '1px solid #1E2330',
+          background: '#000000',
+          padding: '0.45rem 1.25rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.45rem',
+          justifyContent: 'center',
+          gap: '0.55rem',
           overflowX: 'auto',
         }}>
           {navItems.filter(item => item.id !== 'settings').map((item) => {
@@ -248,33 +250,35 @@ export default function Header({
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
+                className={`desktop-nav-btn ${isActive ? 'active' : ''}`}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.45rem',
-                  padding: '0.35rem 0.75rem',
-                  fontSize: '0.78rem',
+                  padding: '0.38rem 0.8rem',
+                  fontSize: '0.8rem',
                   fontFamily: 'var(--font-heading)',
                   fontWeight: isActive ? 700 : 500,
                   whiteSpace: 'nowrap',
                   borderRadius: 'var(--radius-sm)',
-                  border: isActive ? '1px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                  background: isActive ? 'var(--accent-primary)' : 'transparent',
-                  color: isActive ? '#FFFFFF' : 'var(--text-primary)',
+                  border: isActive ? '1px solid var(--accent-primary)' : '1px solid #232A3B',
+                  background: isActive ? 'var(--accent-primary)' : '#111622',
+                  color: isActive ? '#FFFFFF' : '#F1F5F9',
                   cursor: 'pointer',
+                  boxShadow: isActive ? '0 2px 10px rgba(59, 96, 197, 0.45)' : 'none',
                   transition: 'var(--transition-smooth)'
                 }}
               >
-                <Icon size={14} color={isActive ? '#FFFFFF' : 'var(--accent-primary)'} />
+                <Icon size={14} color={isActive ? '#FFFFFF' : '#94A3B8'} />
                 <span>{item.label}</span>
                 {item.count && (
                   <span style={{
                     fontSize: '0.65rem',
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700,
-                    padding: '0.05rem 0.35rem',
+                    padding: '0.05rem 0.4rem',
                     borderRadius: '999px',
-                    background: isActive ? 'rgba(255,255,255,0.3)' : 'var(--accent-primary)',
+                    background: isActive ? 'rgba(255,255,255,0.25)' : 'var(--accent-primary)',
                     color: '#FFFFFF'
                   }}>
                     {item.count}
@@ -282,13 +286,14 @@ export default function Header({
                 )}
                 {item.id === 'used-phones' && (
                   <span style={{
-                    fontSize: '0.6rem',
+                    fontSize: '0.62rem',
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 600,
-                    padding: '0.05rem 0.3rem',
-                    borderRadius: '2px',
-                    background: isActive ? 'rgba(255,255,255,0.2)' : 'var(--illoca-blue-subtle)',
-                    color: isActive ? '#FFFFFF' : 'var(--accent-primary)'
+                    padding: '0.05rem 0.35rem',
+                    borderRadius: '3px',
+                    background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(59, 130, 246, 0.22)',
+                    color: isActive ? '#FFFFFF' : '#93C5FD',
+                    border: '1px solid rgba(59, 130, 246, 0.35)'
                   }}>
                     Aadhaar
                   </span>

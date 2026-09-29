@@ -88,6 +88,7 @@ export default function UsedMobileModule({
   const [refurbWarranty, setRefurbWarranty] = useState('15 Days ALZINO Testing Warranty');
   const [resellBillingType, setResellBillingType] = useState('non-gst'); // 'non-gst' (Margin scheme) or 'gst'
   const [resellPaymentMode, setResellPaymentMode] = useState('Cash');
+  const [resellDiscount, setResellDiscount] = useState(0);
   const [selectedAccessories, setSelectedAccessories] = useState([
     'Fast Charger & Adapter',
     'Type-C / Lightning Cable',
@@ -282,6 +283,7 @@ export default function UsedMobileModule({
   // =========================================================================
   const handleOpenResellModal = (device) => {
     setSelectedDevice(device);
+    setResellDiscount(0);
     setResellPrice(String(device.sellPrice || Math.round((device.buyPrice || 15000) * 1.15)));
     setBuyerName('');
     setBuyerPhone('');
@@ -307,6 +309,8 @@ export default function UsedMobileModule({
       return;
     }
     const finalPrice = parseFloat(resellPrice);
+    const discountAmt = Math.max(0, Number(resellDiscount) || 0);
+    const grandTotalPrice = Math.max(0, Math.round(finalPrice - discountAmt));
     if (!finalPrice || finalPrice <= 0) {
       alert("Please enter a valid final selling price.");
       return;
@@ -318,7 +322,7 @@ export default function UsedMobileModule({
     const today = new Date().toISOString().split('T')[0];
 
     const deviceCost = Number(selectedDevice.buyPrice) || 0;
-    const marginProfit = Math.round(finalPrice - deviceCost);
+    const marginProfit = Math.round(grandTotalPrice - deviceCost);
     const primaryImei = selectedDevice.imeis && selectedDevice.imeis.length > 0 
       ? selectedDevice.imeis 
       : [selectedDevice.barcode || ''];
@@ -354,14 +358,14 @@ export default function UsedMobileModule({
           accessories: selectedAccessories.join(', '),
         }
       ],
-      taxableAmount: isNonGst ? finalPrice : parseFloat((finalPrice / 1.18).toFixed(2)),
-      cgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
-      sgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
+      taxableAmount: isNonGst ? grandTotalPrice : parseFloat((grandTotalPrice / 1.18).toFixed(2)),
+      cgstTotal: isNonGst ? 0 : parseFloat(((grandTotalPrice - (grandTotalPrice / 1.18)) / 2).toFixed(2)),
+      sgstTotal: isNonGst ? 0 : parseFloat(((grandTotalPrice - (grandTotalPrice / 1.18)) / 2).toFixed(2)),
       igstTotal: 0,
-      discount: 0,
-      grandTotal: finalPrice,
-      paidAmount: resellPaymentMode === 'Khata' ? 0 : finalPrice,
-      khataDue: resellPaymentMode === 'Khata' ? finalPrice : 0,
+      discount: discountAmt,
+      grandTotal: grandTotalPrice,
+      paidAmount: resellPaymentMode === 'Khata' ? 0 : grandTotalPrice,
+      khataDue: resellPaymentMode === 'Khata' ? grandTotalPrice : 0,
       totalProfit: marginProfit,
       warrantyNotes: refurbWarranty,
       accessoriesNotes: selectedAccessories.join(', '),
@@ -394,8 +398,8 @@ export default function UsedMobileModule({
         const updated = [...prev];
         updated[matchIndex] = {
           ...updated[matchIndex],
-          totalSpent: (updated[matchIndex].totalSpent || 0) + finalPrice,
-          balanceDue: (updated[matchIndex].balanceDue || 0) + (resellPaymentMode === 'Khata' ? finalPrice : 0),
+          totalSpent: (updated[matchIndex].totalSpent || 0) + grandTotalPrice,
+          balanceDue: (updated[matchIndex].balanceDue || 0) + (resellPaymentMode === 'Khata' ? grandTotalPrice : 0),
         };
         return updated;
       } else {
@@ -405,8 +409,8 @@ export default function UsedMobileModule({
           phone: buyerPhone.trim(),
           address: buyerAddress.trim() || 'Bodhan',
           gstin: buyerGstin.trim(),
-          totalSpent: finalPrice,
-          balanceDue: resellPaymentMode === 'Khata' ? finalPrice : 0,
+          totalSpent: grandTotalPrice,
+          balanceDue: resellPaymentMode === 'Khata' ? grandTotalPrice : 0,
         };
         return [newCust, ...prev];
       }
@@ -1797,22 +1801,40 @@ export default function UsedMobileModule({
               </div>
 
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Projected Store Margin</div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Net Payable / Store Margin</div>
                 {(() => {
                   const currentSell = parseFloat(resellPrice) || 0;
+                  const disc = Math.max(0, Number(resellDiscount) || 0);
+                  const netPayable = Math.max(0, Math.round(currentSell - disc));
                   const currentBuy = Number(selectedDevice.buyPrice) || 0;
-                  const profit = currentSell - currentBuy;
+                  const profit = netPayable - currentBuy;
                   const marginPct = currentBuy ? Math.round((profit / currentBuy) * 100) : 0;
 
                   return (
-                    <div style={{
-                      fontSize: '1.15rem',
-                      fontWeight: 800,
-                      fontFamily: 'var(--font-mono)',
-                      color: profit >= 0 ? 'var(--status-green)' : 'var(--status-red)',
-                      marginTop: '0.15rem'
-                    }}>
-                      {profit >= 0 ? `+₹${profit.toLocaleString()} (${marginPct}%)` : `-₹${Math.abs(profit).toLocaleString()}`}
+                    <div>
+                      {disc > 0 && (
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', textDecoration: 'line-through' }}>
+                          ₹{currentSell.toLocaleString()}
+                        </div>
+                      )}
+                      <div style={{
+                        fontSize: '1.15rem',
+                        fontWeight: 800,
+                        fontFamily: 'var(--font-mono)',
+                        color: 'var(--accent-primary)',
+                        marginTop: '0.1rem'
+                      }}>
+                        ₹{netPayable.toLocaleString()}
+                      </div>
+                      <div style={{
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono)',
+                        color: profit >= 0 ? 'var(--status-green)' : 'var(--status-red)',
+                        marginTop: '0.1rem'
+                      }}>
+                        {profit >= 0 ? `Profit: +₹${profit.toLocaleString()} (${marginPct}%)` : `Loss: -₹${Math.abs(profit).toLocaleString()}`}
+                      </div>
                     </div>
                   );
                 })()}
@@ -1936,6 +1958,22 @@ export default function UsedMobileModule({
                   <option value="Debit / Credit Card">Debit / Credit Card</option>
                   <option value="Khata">Khata (Add to Credit Ledger)</option>
                 </select>
+
+                <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginTop: '0.45rem', marginBottom: '0.25rem' }}>
+                  Discount on Cart (₹)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--status-green)', fontWeight: 700, fontSize: '0.9rem' }}>−</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={resellDiscount}
+                    onChange={(e) => setResellDiscount(e.target.value)}
+                    className="input-field"
+                    style={{ paddingLeft: '1.5rem', color: resellDiscount > 0 ? 'var(--status-green)' : undefined, fontWeight: 600 }}
+                    placeholder="0"
+                  />
+                </div>
               </div>
             </div>
 

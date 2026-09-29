@@ -153,6 +153,7 @@ export default function RepairLab({
   const [repairWarranty, setRepairWarranty] = useState('30 Days Display & Touch Warranty (No physical damage)');
   const [repairBillingType, setRepairBillingType] = useState('non-gst'); // 'non-gst' or 'gst'
   const [repairPaymentMode, setRepairPaymentMode] = useState('Cash');
+  const [repairDiscount, setRepairDiscount] = useState(0);
   const [repairNotes, setRepairNotes] = useState(
     'Device tested and confirmed working. 30 days warranty on replaced components only. Physical or liquid damage voids warranty.'
   );
@@ -174,6 +175,7 @@ export default function RepairLab({
     setRepairWarranty('30 Days Display & Touch Warranty (No physical damage)');
     setRepairBillingType('non-gst');
     setRepairPaymentMode('Cash');
+    setRepairDiscount(0);
     setRepairNotes('Device tested and confirmed working. Keep bill for warranty claims.');
     setBillModalOpen(true);
   };
@@ -188,14 +190,17 @@ export default function RepairLab({
       return;
     }
 
+    const discountAmt = Math.max(0, Number(repairDiscount) || 0);
+    const grandTotalPrice = Math.max(0, Math.round(finalPrice - discountAmt));
+
     const isNonGst = repairBillingType === 'non-gst';
     const prefix = isNonGst ? 'ALZ-SRV' : 'ALZ-INV';
     const invoiceNo = `${prefix}-${String(invoices.length + 201).padStart(4, '0')}`;
     const today = new Date().toISOString().split('T')[0];
 
     const advance = Number(jobToBill.advancePaid) || 0;
-    const netBalanceToCollect = Math.max(0, finalPrice - advance);
-    const actualPaid = repairPaymentMode === 'Khata' ? advance : finalPrice;
+    const netBalanceToCollect = Math.max(0, grandTotalPrice - advance);
+    const actualPaid = repairPaymentMode === 'Khata' ? advance : grandTotalPrice;
     const khataDue = repairPaymentMode === 'Khata' ? netBalanceToCollect : 0;
 
     // Construct official Invoice
@@ -226,20 +231,20 @@ export default function RepairLab({
           gstRate: isNonGst ? 0 : 18,
           taxable: isNonGst ? finalPrice : parseFloat((finalPrice / 1.18).toFixed(2)),
           total: finalPrice,
-          profit: Math.round(finalPrice * 0.6), // labor & profit margin
+          profit: Math.round(grandTotalPrice * 0.6), // labor & profit margin
           warranty: repairWarranty,
           condition: `Repaired & Tested (${jobToBill.issues.join(', ')})`,
         }
       ],
-      taxableAmount: isNonGst ? finalPrice : parseFloat((finalPrice / 1.18).toFixed(2)),
-      cgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
-      sgstTotal: isNonGst ? 0 : parseFloat(((finalPrice - (finalPrice / 1.18)) / 2).toFixed(2)),
+      taxableAmount: isNonGst ? grandTotalPrice : parseFloat((grandTotalPrice / 1.18).toFixed(2)),
+      cgstTotal: isNonGst ? 0 : parseFloat(((grandTotalPrice - (grandTotalPrice / 1.18)) / 2).toFixed(2)),
+      sgstTotal: isNonGst ? 0 : parseFloat(((grandTotalPrice - (grandTotalPrice / 1.18)) / 2).toFixed(2)),
       igstTotal: 0,
-      discount: 0,
-      grandTotal: finalPrice,
+      discount: discountAmt,
+      grandTotal: grandTotalPrice,
       paidAmount: actualPaid,
       khataDue,
-      totalProfit: Math.round(finalPrice * 0.6),
+      totalProfit: Math.round(grandTotalPrice * 0.6),
     };
 
     // 1. Add to invoices
@@ -723,11 +728,18 @@ export default function RepairLab({
                 </div>
                 {(() => {
                   const finalAmount = parseFloat(finalServicePrice) || 0;
+                  const disc = Math.max(0, Number(repairDiscount) || 0);
+                  const afterDiscount = Math.max(0, Math.round(finalAmount - disc));
                   const adv = Number(jobToBill.advancePaid) || 0;
-                  const netDue = Math.max(0, finalAmount - adv);
+                  const netDue = Math.max(0, afterDiscount - adv);
 
                   return (
                     <div style={{ marginTop: '0.2rem' }}>
+                      {disc > 0 && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--status-green)', fontWeight: 600 }}>
+                          After Discount: ₹{afterDiscount.toLocaleString()}
+                        </div>
+                      )}
                       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Net Balance to Collect Now:</div>
                       <div style={{
                         fontSize: '1.2rem',
@@ -810,6 +822,22 @@ export default function RepairLab({
                   <option value="Card">Debit / Credit Card</option>
                   <option value="Khata">Khata (Customer Credit)</option>
                 </select>
+
+                <label style={{ fontSize: '0.74rem', fontWeight: 600, display: 'block', marginTop: '0.45rem', marginBottom: '0.25rem' }}>
+                  Discount on Bill (₹)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--status-green)', fontWeight: 700, fontSize: '0.9rem' }}>−</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={repairDiscount}
+                    onChange={(e) => setRepairDiscount(e.target.value)}
+                    className="input-field"
+                    style={{ paddingLeft: '1.5rem', color: repairDiscount > 0 ? 'var(--status-green)' : undefined, fontWeight: 600 }}
+                    placeholder="0"
+                  />
+                </div>
               </div>
             </div>
 

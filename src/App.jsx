@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
+import ExecutiveDashboard from './components/ExecutiveDashboard';
 import PosBilling from './components/PosBilling';
 import UsedMobileModule from './components/UsedMobileModule';
 import RepairLab from './components/RepairLab';
@@ -23,6 +24,7 @@ import {
   initialSuppliers,
   initialExpenses,
   initialInvoices,
+  initialWarrantyClaims,
   getStorageData,
   setStorageData
 } from './data/initialData';
@@ -30,8 +32,8 @@ import {
 export default function App() {
   // Theme State & Admin Portal Mode
   const [theme, setTheme] = useState(() => getStorageData('THEME', 'cream')); // cream | dark
-  const role = 'admin'; // Permanent Admin Portal
-  const [activeTab, setActiveTab] = useState('pos');
+  const [role, setRole] = useState('admin'); // Permanent Admin Portal
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Core Persistent Data States
   const [shopConfig, setShopConfig] = useState(() => getStorageData('SHOP_CONFIG', defaultShopConfig));
@@ -42,6 +44,7 @@ export default function App() {
   const [suppliers, setSuppliers] = useState(() => getStorageData('SUPPLIERS', initialSuppliers));
   const [expenses, setExpenses] = useState(() => getStorageData('EXPENSES', initialExpenses));
   const [invoices, setInvoices] = useState(() => getStorageData('INVOICES', initialInvoices));
+  const [warrantyClaims, setWarrantyClaims] = useState(() => getStorageData('WARRANTY_CLAIMS', initialWarrantyClaims));
 
   // Modals & Drawers
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -62,6 +65,7 @@ export default function App() {
   useEffect(() => { setStorageData('SUPPLIERS', suppliers); }, [suppliers]);
   useEffect(() => { setStorageData('EXPENSES', expenses); }, [expenses]);
   useEffect(() => { setStorageData('INVOICES', invoices); }, [invoices]);
+  useEffect(() => { setStorageData('WARRANTY_CLAIMS', warrantyClaims); }, [warrantyClaims]);
 
   // Apply theme class to <body>
   useEffect(() => {
@@ -78,6 +82,9 @@ export default function App() {
       } else if (e.key === 'F8') {
         e.preventDefault();
         setIsSearchOpen(prev => !prev);
+      } else if (e.key === 'F1') {
+        e.preventDefault();
+        setActiveTab('dashboard');
       } else if (e.key === 'F2') {
         e.preventDefault();
         setActiveTab('pos');
@@ -161,6 +168,20 @@ export default function App() {
 
       {/* Main Tab Content */}
       <main style={{ flex: 1, width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        {activeTab === 'dashboard' && (
+          <ExecutiveDashboard
+            invoices={invoices}
+            inventory={inventory}
+            usedPurchases={usedPurchases}
+            repairJobs={repairJobs}
+            expenses={expenses}
+            warrantyClaims={warrantyClaims}
+            setWarrantyClaims={setWarrantyClaims}
+            shopConfig={shopConfig}
+            setActiveTab={setActiveTab}
+          />
+        )}
+
         {activeTab === 'pos' && (
           <PosBilling
             inventory={inventory}
@@ -210,6 +231,7 @@ export default function App() {
             inventory={inventory}
             setInventory={setInventory}
             role={role}
+            shopConfig={shopConfig}
             onSelectBarcode={handleSelectBarcodeFromInventory}
           />
         )}

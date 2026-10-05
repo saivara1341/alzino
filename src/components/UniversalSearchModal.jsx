@@ -170,8 +170,12 @@ export default function UniversalSearchModal({
                                 {item.description}
                               </div>
                             )}
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Stock: {item.stock} pcs • {item.brand} • {(item.gstRate && item.gstRate > 0) || item.isGst ? 'GST' : 'Non-GST'} • {item.imeis?.length > 0 ? `IMEI: ${item.imeis[0]}` : `Barcode: ${item.barcode}`}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
+                              <span>Stock: {item.stock} pcs</span>
+                              <span className="mono-tag" style={{ background: 'var(--illoca-blue-subtle)', color: 'var(--accent-primary)', fontWeight: 700 }}>
+                                📍 Rack: {item.rack || 'R-01'} | Bin: {item.bin || 'B-01'}
+                              </span>
+                              <span>• {item.brand} • {(item.gstRate && item.gstRate > 0) || item.isGst ? 'GST' : 'Non-GST'} • {item.imeis?.length > 0 ? `IMEI: ${item.imeis[0]}` : `Barcode: ${item.barcode}`}</span>
                             </div>
                           </div>
                         </div>

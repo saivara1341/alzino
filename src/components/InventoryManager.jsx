@@ -11,9 +11,15 @@ import {
   ShieldAlert, 
   Smartphone,
   CheckCircle,
-  Hash
+  Hash,
+  Globe,
+  MapPin,
+  ArrowRightLeft,
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 import { renderBarcodeSvg } from '../utils/barcode';
+import MarketPriceCompareModal from './MarketPriceCompareModal';
 
 const standardBrands = [
   'Apple', 
@@ -36,7 +42,8 @@ export default function InventoryManager({
   inventory, 
   setInventory, 
   role, 
-  onSelectBarcode 
+  onSelectBarcode,
+  shopConfig
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -48,6 +55,17 @@ export default function InventoryManager({
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [isCustomBrand, setIsCustomBrand] = useState(false);
+
+  // 1-Click Online Price Compare Modal state
+  const [compareProduct, setCompareProduct] = useState(null);
+
+  // Stock Transfer (Rack/Bin Move) state
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [transferItem, setTransferItem] = useState(null);
+  const [transferFromLocationIndex, setTransferFromLocationIndex] = useState(0);
+  const [transferToRack, setTransferToRack] = useState('R-02');
+  const [transferToBin, setTransferToBin] = useState('B-01');
+  const [transferQty, setTransferQty] = useState(1);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -63,6 +81,8 @@ export default function InventoryManager({
     mrp: '',
     stock: 1,
     lowStockThreshold: 2,
+    rack: 'R-01',
+    bin: 'B-01',
     barcode: '',
     imeisText: '',
     warranty: '1 Year Brand Warranty',
@@ -132,6 +152,8 @@ export default function InventoryManager({
       mrp: '',
       stock: 5,
       lowStockThreshold: 2,
+      rack: 'R-01',
+      bin: 'B-01',
       barcode: `ALZ-${Date.now().toString().slice(-6)}`,
       imeisText: '',
       warranty: 'Standard Warranty',
@@ -156,6 +178,8 @@ export default function InventoryManager({
       mrp: item.mrp || item.sellPrice,
       stock: item.stock,
       lowStockThreshold: item.lowStockThreshold || 2,
+      rack: item.rack || (item.locations?.[0]?.rack) || 'R-01',
+      bin: item.bin || (item.locations?.[0]?.bin) || 'B-01',
       barcode: item.barcode || '',
       imeisText: (item.imeis || []).join('\n'),
       warranty: item.warranty || '',
@@ -167,6 +191,70 @@ export default function InventoryManager({
     if (confirm(`Delete "${name}" from ALZINO inventory? This cannot be undone.`)) {
       setInventory(prev => prev.filter(i => i.id !== id));
     }
+  };
+
+  // Stock Transfer Modal Opener
+  const handleOpenTransfer = (item) => {
+    setTransferItem(item);
+    setTransferFromLocationIndex(0);
+    setTransferToRack('R-02');
+    setTransferToBin('B-01');
+    setTransferQty(1);
+    setShowTransferModal(true);
+  };
+
+  // Execute Stock Transfer between Rack / Bin
+  const handleExecuteTransfer = () => {
+    if (!transferItem) return;
+    const currentLocs = transferItem.locations && transferItem.locations.length > 0 
+      ? JSON.parse(JSON.stringify(transferItem.locations)) 
+      : [{ rack: transferItem.rack || 'R-01', bin: transferItem.bin || 'B-01', qty: transferItem.stock }];
+
+    const fromLoc = currentLocs[transferFromLocationIndex];
+    if (!fromLoc || fromLoc.qty < transferQty) {
+      alert(`Cannot transfer ${transferQty} pcs. Selected source location only has ${fromLoc ? fromLoc.qty : 0} pcs.`);
+      return;
+    }
+
+    if (!transferToRack.trim() || !transferToBin.trim()) {
+      alert("Please specify destination Rack and Bin");
+      return;
+    }
+
+    // Deduct from source
+    fromLoc.qty -= transferQty;
+
+    // Add to target
+    const targetIdx = currentLocs.findIndex(
+      l => l.rack?.toUpperCase() === transferToRack.trim().toUpperCase() && l.bin?.toUpperCase() === transferToBin.trim().toUpperCase()
+    );
+
+    if (targetIdx >= 0) {
+      currentLocs[targetIdx].qty += transferQty;
+    } else {
+      currentLocs.push({
+        rack: transferToRack.trim().toUpperCase(),
+        bin: transferToBin.trim().toUpperCase(),
+        qty: transferQty
+      });
+    }
+
+    const finalLocs = currentLocs.filter(l => l.qty > 0);
+
+    setInventory(prev => prev.map(p => {
+      if (p.id === transferItem.id) {
+        return {
+          ...p,
+          rack: finalLocs[0]?.rack || transferToRack.trim().toUpperCase(),
+          bin: finalLocs[0]?.bin || transferToBin.trim().toUpperCase(),
+          locations: finalLocs
+        };
+      }
+      return p;
+    }));
+
+    setShowTransferModal(false);
+    alert(`✅ Successfully transferred ${transferQty} pcs of ${transferItem.name} to Rack: ${transferToRack.toUpperCase()} / Bin: ${transferToBin.toUpperCase()}`);
   };
 
   const handleSave = (e) => {
@@ -184,10 +272,17 @@ export default function InventoryManager({
     // If mobile or appliance with IMEIs, sync stock count with IMEI count if specified
     const calculatedStock = imeisArray.length > 0 ? imeisArray.length : parseInt(formData.stock, 10) || 0;
     const finalGstRate = formData.isGst ? (parseFloat(formData.gstRate) || 18) : 0;
+    const rackVal = formData.rack.trim().toUpperCase() || 'R-01';
+    const binVal = formData.bin.trim().toUpperCase() || 'B-01';
 
     if (editingItem) {
       setInventory(prev => prev.map(item => {
         if (item.id === editingItem.id) {
+          const existingLocs = item.locations || [];
+          const updatedLocs = existingLocs.length > 0 
+            ? existingLocs.map((loc, idx) => idx === 0 ? { ...loc, rack: rackVal, bin: binVal, qty: calculatedStock } : loc)
+            : [{ rack: rackVal, bin: binVal, qty: calculatedStock }];
+
           return {
             ...item,
             category: formData.category,
@@ -202,6 +297,9 @@ export default function InventoryManager({
             mrp: parseFloat(formData.mrp) || parseFloat(formData.sellPrice),
             stock: calculatedStock,
             lowStockThreshold: parseInt(formData.lowStockThreshold, 10) || 2,
+            rack: rackVal,
+            bin: binVal,
+            locations: updatedLocs,
             barcode: formData.barcode,
             imeis: imeisArray,
             warranty: formData.warranty,
@@ -224,6 +322,9 @@ export default function InventoryManager({
         mrp: parseFloat(formData.mrp) || parseFloat(formData.sellPrice),
         stock: calculatedStock,
         lowStockThreshold: parseInt(formData.lowStockThreshold, 10) || 2,
+        rack: rackVal,
+        bin: binVal,
+        locations: [{ rack: rackVal, bin: binVal, qty: calculatedStock }],
         barcode: formData.barcode || `ALZ-${Date.now().toString().slice(-6)}`,
         imeis: imeisArray,
         warranty: formData.warranty,
@@ -247,14 +348,27 @@ export default function InventoryManager({
           </span>
         </div>
 
-        <button 
-          onClick={openAddModal}
-          className="btn-primary"
-          style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem' }}
-        >
-          <Plus size={15} />
-          <span>New Product</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button 
+            onClick={() => {
+              if (inventory.length > 0) handleOpenTransfer(inventory[0]);
+            }}
+            className="btn-secondary"
+            style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+          >
+            <ArrowRightLeft size={15} />
+            <span>Stock Transfer (Rack/Bin)</span>
+          </button>
+
+          <button 
+            onClick={openAddModal}
+            className="btn-primary"
+            style={{ padding: '0.45rem 0.9rem', fontSize: '0.82rem' }}
+          >
+            <Plus size={15} />
+            <span>New Product</span>
+          </button>
+        </div>
       </div>
 
       {/* Unified Minimalist Filter Bar */}
@@ -374,6 +488,7 @@ export default function InventoryManager({
               <th>Product & Description</th>
               <th>Tax Class</th>
               <th>Stock</th>
+              <th>Rack / Bin</th>
               <th>Serial / Barcode</th>
               {role === 'admin' && <th>Buy Price</th>}
               <th>Sell Price</th>
@@ -385,7 +500,7 @@ export default function InventoryManager({
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan={9} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
                   No products match the selected filters or search keyword "{searchTerm}".
                 </td>
               </tr>
@@ -455,6 +570,21 @@ export default function InventoryManager({
                       </div>
                     </td>
 
+                    {/* Warehouse Location (Rack / Bin) */}
+                    <td style={{ padding: '0.75rem 0.5rem' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                        <span className="mono-tag" style={{ background: 'var(--illoca-blue-subtle)', color: 'var(--accent-primary)', fontWeight: 700 }} title="Warehouse Storage Shelf Coordinates">
+                          <MapPin size={11} style={{ display: 'inline', marginRight: '3px' }} />
+                          {item.rack || 'R-01'} / {item.bin || 'B-01'}
+                        </span>
+                        {item.locations && item.locations.length > 1 && (
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }} title={item.locations.map(l => `${l.rack}/${l.bin} (${l.qty} pcs)`).join(', ')}>
+                            +{item.locations.length - 1} more bins ({item.locations.reduce((s, l) => s + l.qty, 0)} total)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
                     {/* IMEI / Barcode */}
                     <td style={{ padding: '0.75rem 0.5rem' }}>
                       {item.imeis && item.imeis.length > 0 ? (
@@ -516,6 +646,28 @@ export default function InventoryManager({
                     {/* Actions */}
                     <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '0.35rem' }}>
+                        {/* 1-Click Online Price Compare (for Mobiles) */}
+                        {(item.category === 'New Mobiles' || item.category === 'Used Mobiles' || item.marketComparison) && (
+                          <button
+                            onClick={() => setCompareProduct(item)}
+                            className="btn-outline"
+                            style={{ padding: '0.35rem 0.5rem', color: 'var(--accent-primary)', borderColor: 'var(--border-accent)' }}
+                            title="1-Click Online Price Compare (Amazon, Flipkart, Brand)"
+                          >
+                            <Globe size={14} />
+                          </button>
+                        )}
+
+                        {/* Stock Transfer (Rack/Bin Move) */}
+                        <button
+                          onClick={() => handleOpenTransfer(item)}
+                          className="btn-outline"
+                          style={{ padding: '0.35rem 0.5rem' }}
+                          title="Transfer Stock to another Rack / Bin"
+                        >
+                          <ArrowRightLeft size={14} />
+                        </button>
+
                         <button
                           onClick={() => onSelectBarcode(item)}
                           className="btn-outline"
@@ -734,6 +886,32 @@ export default function InventoryManager({
               </div>
 
               <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Warehouse Rack No *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. R-01, R-02, APPLIANCE-BAY"
+                  value={formData.rack}
+                  onChange={(e) => setFormData({ ...formData, rack: e.target.value })}
+                  className="input-field"
+                  style={{ textTransform: 'uppercase', fontWeight: 700 }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Warehouse Bin / Shelf No *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. B-01, B-04, BAY-01"
+                  value={formData.bin}
+                  onChange={(e) => setFormData({ ...formData, bin: e.target.value })}
+                  className="input-field"
+                  style={{ textTransform: 'uppercase', fontWeight: 700 }}
+                  required
+                />
+              </div>
+
+              <div>
                 <label style={{ fontSize: '0.75rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>Barcode / EAN</label>
                 <input
                   type="text"
@@ -793,6 +971,106 @@ export default function InventoryManager({
           </form>
         </div>
       )}
+
+      {/* STOCK TRANSFER MODAL (Rack/Bin Move) */}
+      {showTransferModal && transferItem && (
+        <div className="modal-backdrop no-print" style={{ zIndex: 1100 }}>
+          <div className="modal-dialog" style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <ArrowRightLeft size={20} color="var(--accent-primary)" />
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>
+                  Stock Transfer (Rack / Bin Move)
+                </h3>
+              </div>
+              <button onClick={() => setShowTransferModal(false)} className="btn-secondary" style={{ padding: '0.25rem 0.5rem' }}>
+                <X size={16} />
+              </button>
+            </div>
+
+            <div style={{ background: 'var(--surface-primary)', padding: '0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{transferItem.name}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Brand: {transferItem.brand} • Total Stock: {transferItem.stock} pcs</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div>
+                <label className="input-label">From Current Source Location:</label>
+                <select
+                  value={transferFromLocationIndex}
+                  onChange={(e) => setTransferFromLocationIndex(Number(e.target.value))}
+                  className="input-field"
+                >
+                  {(transferItem.locations || [{ rack: transferItem.rack || 'R-01', bin: transferItem.bin || 'B-01', qty: transferItem.stock }]).map((loc, idx) => (
+                    <option key={idx} value={idx}>
+                      Rack: {loc.rack} | Bin: {loc.bin} (Available: {loc.qty} pcs)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="input-label">To Destination Rack No *:</label>
+                  <input
+                    type="text"
+                    value={transferToRack}
+                    onChange={(e) => setTransferToRack(e.target.value)}
+                    placeholder="e.g. R-03"
+                    className="input-field"
+                    style={{ textTransform: 'uppercase', fontWeight: 700 }}
+                  />
+                </div>
+                <div>
+                  <label className="input-label">To Destination Bin No *:</label>
+                  <input
+                    type="text"
+                    value={transferToBin}
+                    onChange={(e) => setTransferToBin(e.target.value)}
+                    placeholder="e.g. B-05"
+                    className="input-field"
+                    style={{ textTransform: 'uppercase', fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="input-label">Quantity to Transfer (Pcs):</label>
+                <input
+                  type="number"
+                  min="1"
+                  max={(transferItem.locations?.[transferFromLocationIndex]?.qty) || transferItem.stock}
+                  value={transferQty}
+                  onChange={(e) => setTransferQty(Math.max(1, Number(e.target.value)))}
+                  className="input-field"
+                  style={{ fontWeight: 700 }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.65rem', marginTop: '1.25rem' }}>
+              <button onClick={() => setShowTransferModal(false)} className="btn-secondary">
+                Cancel
+              </button>
+              <button onClick={handleExecuteTransfer} className="btn-primary">
+                <ArrowRightLeft size={15} />
+                <span>Confirm Stock Transfer</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 1-CLICK ONLINE PRICE COMPARE MODAL */}
+      <MarketPriceCompareModal
+        isOpen={Boolean(compareProduct)}
+        onClose={() => setCompareProduct(null)}
+        product={compareProduct}
+        onUpdateProductPrices={(productId, updatedComparison) => {
+          setInventory(prev => prev.map(p => p.id === productId ? { ...p, marketComparison: updatedComparison } : p));
+        }}
+        shopConfig={shopConfig}
+      />
 
     </div>
   );

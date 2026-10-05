@@ -21,8 +21,10 @@ import {
   Percent,
   CheckSquare,
   Square,
-  DollarSign
+  DollarSign,
+  Globe
 } from 'lucide-react';
+import MarketPriceCompareModal from './MarketPriceCompareModal';
 
 export default function UsedMobileModule({ 
   usedPurchases = [], 
@@ -37,6 +39,7 @@ export default function UsedMobileModule({
   onPrintInvoice = () => {},
   shopConfig = {}
 }) {
+  const [marketCompareDevice, setMarketCompareDevice] = useState(null);
   // Main view navigation: 'stock' (Refurbished Stock & Resell), 'buy' (Inward KYC), 'resold' (Billing Archive), 'purchases' (Inward History)
   const [activeSubTab, setActiveSubTab] = useState('stock');
   const [searchTerm, setSearchTerm] = useState('');
@@ -1181,9 +1184,34 @@ export default function UsedMobileModule({
             </div>
 
             <div>
-              <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '0.35rem' }}>
-                Buy Price Paid to Customer (₹) *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label style={{ fontSize: '0.78rem', fontWeight: 600, margin: 0 }}>
+                  Buy Price Paid to Customer (₹) *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tempDevice = {
+                      id: 'TEMP-BUY-EVAL',
+                      name: model ? `${brand} ${model}` : 'Selected Smartphone',
+                      brand: brand || 'Apple',
+                      buyPrice: parseFloat(buyPrice) || 20000,
+                      sellPrice: parseFloat(targetSellPrice) || 25000,
+                      mrp: parseFloat(targetSellPrice) ? Math.round(parseFloat(targetSellPrice) * 1.15) : 30000,
+                      ram: ram || '8GB',
+                      storage: storage || '128GB',
+                      color: color || 'Black'
+                    };
+                    setMarketCompareDevice(tempDevice);
+                  }}
+                  className="btn-secondary"
+                  style={{ padding: '0.15rem 0.45rem', fontSize: '0.7rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                  title="Check Live Online Price & Calculate Max Safe Buying Quote"
+                >
+                  <Globe size={12} />
+                  <span>Check Safe Buy Rate</span>
+                </button>
+              </div>
               <input
                 type="number"
                 placeholder="e.g. 24000"
@@ -2090,6 +2118,14 @@ export default function UsedMobileModule({
           </div>
         </div>
       )}
+
+      {/* 1-CLICK MARKET PRICE COMPARE & SAFE USED BUYING EVALUATION MODAL */}
+      <MarketPriceCompareModal
+        isOpen={Boolean(marketCompareDevice)}
+        onClose={() => setMarketCompareDevice(null)}
+        product={marketCompareDevice}
+        shopConfig={shopConfig}
+      />
     </div>
   );
 }

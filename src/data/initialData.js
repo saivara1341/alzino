@@ -25,6 +25,9 @@ export const initialInventory = [
     category: "New Mobiles",
     brand: "Apple",
     name: "Apple iPhone 15 (128GB - Black)",
+    ram: "6GB",
+    storage: "128GB",
+    color: "Black",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 62000,
@@ -32,16 +35,44 @@ export const initialInventory = [
     mrp: 79900,
     stock: 2,
     lowStockThreshold: 2,
+    rack: "R-01",
+    bin: "B-01",
+    locations: [
+      { rack: "R-01", bin: "B-01", qty: 2 }
+    ],
+    receivedDate: "2026-09-15",
+    agingDays: 20,
     barcode: "194253901923",
     imeis: ["358249110294821", "358249110294822"],
     warranty: "1 Year Apple India Warranty",
     status: "Active",
+    marketComparison: {
+      model: "Apple iPhone 15",
+      ram: "6GB",
+      storage: "128GB",
+      color: "Black",
+      alzinoBuyRate: 62000,
+      amazonNormalPrice: 69900,
+      amazonCoupon: 1000,
+      amazonBankOffer: 3000,
+      amazonExchangeBonus: 5000,
+      flipkartNormalPrice: 69499,
+      flipkartBankOffer: 2500,
+      flipkartExchangeBonus: 6000,
+      brandPrice: 79900,
+      distributorRate: 62000,
+      lastUpdated: "2026-10-05 16:30",
+      source: "Amazon & Flipkart Verified Sync"
+    }
   },
   {
     id: "PROD-102",
     category: "New Mobiles",
     brand: "Samsung",
     name: "Samsung Galaxy S24 5G (256GB - Onyx Black)",
+    ram: "8GB",
+    storage: "256GB",
+    color: "Onyx Black",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 68500,
@@ -49,16 +80,44 @@ export const initialInventory = [
     mrp: 84999,
     stock: 2,
     lowStockThreshold: 1,
+    rack: "R-01",
+    bin: "B-02",
+    locations: [
+      { rack: "R-01", bin: "B-02", qty: 2 }
+    ],
+    receivedDate: "2026-09-10",
+    agingDays: 25,
     barcode: "880609531029",
     imeis: ["354921098234120", "354921098234121"],
     warranty: "1 Year Samsung India Warranty",
     status: "Active",
+    marketComparison: {
+      model: "Samsung Galaxy S24 5G",
+      ram: "8GB",
+      storage: "256GB",
+      color: "Onyx Black",
+      alzinoBuyRate: 68500,
+      amazonNormalPrice: 74999,
+      amazonCoupon: 0,
+      amazonBankOffer: 5000,
+      amazonExchangeBonus: 8000,
+      flipkartNormalPrice: 74999,
+      flipkartBankOffer: 4500,
+      flipkartExchangeBonus: 7500,
+      brandPrice: 79999,
+      distributorRate: 68500,
+      lastUpdated: "2026-10-05 16:30",
+      source: "Samsung Official & Amazon Store"
+    }
   },
   {
     id: "PROD-103",
     category: "New Mobiles",
     brand: "OnePlus",
     name: "OnePlus Nord CE 4 (8GB RAM / 128GB - Celadon Marble)",
+    ram: "8GB",
+    storage: "128GB",
+    color: "Celadon Marble",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 21200,
@@ -66,16 +125,44 @@ export const initialInventory = [
     mrp: 26999,
     stock: 4,
     lowStockThreshold: 2,
+    rack: "R-01",
+    bin: "B-03",
+    locations: [
+      { rack: "R-01", bin: "B-03", qty: 4 }
+    ],
+    receivedDate: "2026-09-01",
+    agingDays: 34,
     barcode: "692181562910",
     imeis: ["864920194820194", "864920194820195", "864920194820196", "864920194820197"],
     warranty: "1 Year Official Warranty",
     status: "Active",
+    marketComparison: {
+      model: "OnePlus Nord CE 4",
+      ram: "8GB",
+      storage: "128GB",
+      color: "Celadon Marble",
+      alzinoBuyRate: 21200,
+      amazonNormalPrice: 24999,
+      amazonCoupon: 500,
+      amazonBankOffer: 1500,
+      amazonExchangeBonus: 3000,
+      flipkartNormalPrice: 24799,
+      flipkartBankOffer: 1250,
+      flipkartExchangeBonus: 3200,
+      brandPrice: 24999,
+      distributorRate: 21200,
+      lastUpdated: "2026-10-05 16:30",
+      source: "OnePlus Store & Amazon India"
+    }
   },
   {
     id: "PROD-104",
     category: "New Mobiles",
     brand: "Vivo",
     name: "Vivo Y200e 5G (8GB / 128GB - Saffron Orange)",
+    ram: "8GB",
+    storage: "128GB",
+    color: "Saffron Orange",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 17400,
@@ -83,10 +170,35 @@ export const initialInventory = [
     mrp: 22999,
     stock: 3,
     lowStockThreshold: 2,
+    rack: "R-01",
+    bin: "B-04",
+    locations: [
+      { rack: "R-01", bin: "B-04", qty: 3 }
+    ],
+    receivedDate: "2026-08-25",
+    agingDays: 41,
     barcode: "693511782019",
     imeis: ["863019284719284", "863019284719285", "863019284719286"],
     warranty: "1 Year Vivo Warranty",
     status: "Active",
+    marketComparison: {
+      model: "Vivo Y200e 5G",
+      ram: "8GB",
+      storage: "128GB",
+      color: "Saffron Orange",
+      alzinoBuyRate: 17400,
+      amazonNormalPrice: 20499,
+      amazonCoupon: 0,
+      amazonBankOffer: 1000,
+      amazonExchangeBonus: 2500,
+      flipkartNormalPrice: 19999,
+      flipkartBankOffer: 1000,
+      flipkartExchangeBonus: 2000,
+      brandPrice: 20999,
+      distributorRate: 17400,
+      lastUpdated: "2026-10-05 16:30",
+      source: "Flipkart & Vivo e-Store"
+    }
   },
   
   // Used Mobiles
@@ -95,6 +207,9 @@ export const initialInventory = [
     category: "Used Mobiles",
     brand: "Apple",
     name: "Used iPhone 13 (128GB - Midnight)",
+    ram: "4GB",
+    storage: "128GB",
+    color: "Midnight",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 32000,
@@ -102,18 +217,46 @@ export const initialInventory = [
     mrp: 42000,
     stock: 1,
     lowStockThreshold: 1,
+    rack: "R-USED",
+    bin: "B-01",
+    locations: [
+      { rack: "R-USED", bin: "B-01", qty: 1 }
+    ],
+    receivedDate: "2026-09-24",
+    agingDays: 11,
     barcode: "ALZ-USED-1301",
     imeis: ["356192049182390"],
     condition: "Grade A+ (Battery Health: 89%, No scratches)",
     kycRef: "KYC-2026-001",
     warranty: "15 Days ALZINO Testing Warranty",
     status: "Active",
+    marketComparison: {
+      model: "Apple iPhone 13 (New Market Benchmark)",
+      ram: "4GB",
+      storage: "128GB",
+      color: "Midnight",
+      alzinoBuyRate: 32000,
+      amazonNormalPrice: 51999,
+      amazonCoupon: 0,
+      amazonBankOffer: 2000,
+      amazonExchangeBonus: 4000,
+      flipkartNormalPrice: 49999,
+      flipkartBankOffer: 1500,
+      flipkartExchangeBonus: 4500,
+      brandPrice: 59900,
+      distributorRate: 34000,
+      lastUpdated: "2026-10-05 16:30",
+      source: "Cashify / Amazon Refurb Benchmark"
+    }
   },
   {
     id: "PROD-202",
     category: "Used Mobiles",
     brand: "OnePlus",
     name: "Used OnePlus 11R 5G (8GB / 128GB - Sonic Black)",
+    ram: "8GB",
+    storage: "128GB",
+    color: "Sonic Black",
     hsn: "851712",
     gstRate: 18,
     buyPrice: 23500,
@@ -121,12 +264,37 @@ export const initialInventory = [
     mrp: 31000,
     stock: 1,
     lowStockThreshold: 1,
+    rack: "R-USED",
+    bin: "B-02",
+    locations: [
+      { rack: "R-USED", bin: "B-02", qty: 1 }
+    ],
+    receivedDate: "2026-09-26",
+    agingDays: 9,
     barcode: "ALZ-USED-11R02",
     imeis: ["869201948201941"],
     condition: "Grade A (Battery Health: 93%, Minor back cover marks)",
     kycRef: "KYC-2026-002",
     warranty: "15 Days ALZINO Testing Warranty",
     status: "Active",
+    marketComparison: {
+      model: "OnePlus 11R 5G (New Market Benchmark)",
+      ram: "8GB",
+      storage: "128GB",
+      color: "Sonic Black",
+      alzinoBuyRate: 23500,
+      amazonNormalPrice: 35999,
+      amazonCoupon: 0,
+      amazonBankOffer: 1500,
+      amazonExchangeBonus: 3000,
+      flipkartNormalPrice: 34999,
+      flipkartBankOffer: 1250,
+      flipkartExchangeBonus: 3500,
+      brandPrice: 37999,
+      distributorRate: 25000,
+      lastUpdated: "2026-10-05 16:30",
+      source: "Amazon & Cashify Benchmark"
+    }
   },
 
   // Mobile Accessories
@@ -144,6 +312,14 @@ export const initialInventory = [
     mrp: 249,
     stock: 22,
     lowStockThreshold: 5,
+    rack: "R-02",
+    bin: "B-04",
+    locations: [
+      { rack: "R-02", bin: "B-04", qty: 15 },
+      { rack: "R-OVERFLOW", bin: "B-01", qty: 7 }
+    ],
+    receivedDate: "2026-09-18",
+    agingDays: 17,
     barcode: "8909876543210",
     imeis: [],
     warranty: "Testing Warranty",
@@ -163,6 +339,13 @@ export const initialInventory = [
     mrp: 499,
     stock: 15,
     lowStockThreshold: 4,
+    rack: "R-02",
+    bin: "B-05",
+    locations: [
+      { rack: "R-02", bin: "B-05", qty: 15 }
+    ],
+    receivedDate: "2026-09-12",
+    agingDays: 23,
     barcode: "8909876543211",
     imeis: [],
     warranty: "1 Month Warranty",
@@ -182,6 +365,13 @@ export const initialInventory = [
     mrp: 1999,
     stock: 18,
     lowStockThreshold: 5,
+    rack: "R-03",
+    bin: "B-01",
+    locations: [
+      { rack: "R-03", bin: "B-01", qty: 18 }
+    ],
+    receivedDate: "2026-09-14",
+    agingDays: 21,
     barcode: "8901234567890",
     imeis: [],
     warranty: "6 Months Replacement",
@@ -201,6 +391,13 @@ export const initialInventory = [
     mrp: 2990,
     stock: 14,
     lowStockThreshold: 4,
+    rack: "R-03",
+    bin: "B-02",
+    locations: [
+      { rack: "R-03", bin: "B-02", qty: 14 }
+    ],
+    receivedDate: "2026-09-08",
+    agingDays: 27,
     barcode: "8902345678901",
     imeis: [],
     warranty: "1 Year Brand Warranty",
@@ -220,6 +417,13 @@ export const initialInventory = [
     mrp: 399,
     stock: 3, // LOW STOCK ALERT
     lowStockThreshold: 10,
+    rack: "R-04",
+    bin: "B-01",
+    locations: [
+      { rack: "R-04", bin: "B-01", qty: 3 }
+    ],
+    receivedDate: "2026-06-25",
+    agingDays: 102, // >90 Days Aging Stock
     barcode: "8903456789012",
     imeis: [],
     warranty: "Testing Warranty",
@@ -239,6 +443,13 @@ export const initialInventory = [
     mrp: 499,
     stock: 24,
     lowStockThreshold: 8,
+    rack: "R-04",
+    bin: "B-02",
+    locations: [
+      { rack: "R-04", bin: "B-02", qty: 24 }
+    ],
+    receivedDate: "2026-09-19",
+    agingDays: 16,
     barcode: "8904567890123",
     imeis: [],
     warranty: "3 Months Warranty",
@@ -258,6 +469,13 @@ export const initialInventory = [
     mrp: 799,
     stock: 0, // OUT OF STOCK SAMPLE
     lowStockThreshold: 8,
+    rack: "R-04",
+    bin: "B-03",
+    locations: [
+      { rack: "R-04", bin: "B-03", qty: 0 }
+    ],
+    receivedDate: "2026-08-05",
+    agingDays: 61,
     barcode: "8905678901234",
     imeis: [],
     warranty: "NA",
@@ -277,6 +495,13 @@ export const initialInventory = [
     mrp: 39990,
     stock: 2,
     lowStockThreshold: 1,
+    rack: "APPLIANCE-BAY",
+    bin: "BAY-01",
+    locations: [
+      { rack: "APPLIANCE-BAY", bin: "BAY-01", qty: 2 }
+    ],
+    receivedDate: "2026-09-02",
+    agingDays: 33,
     barcode: "LGTV-43-98214",
     imeis: ["LG43SN9021482", "LG43SN9021483"],
     warranty: "1 Year Comprehensive + 1 Year Panel Warranty",
@@ -294,6 +519,13 @@ export const initialInventory = [
     mrp: 4990,
     stock: 4,
     lowStockThreshold: 2,
+    rack: "APPLIANCE-BAY",
+    bin: "BAY-02",
+    locations: [
+      { rack: "APPLIANCE-BAY", bin: "BAY-02", qty: 4 }
+    ],
+    receivedDate: "2026-08-20",
+    agingDays: 46,
     barcode: "HAV-INST-3L-812",
     imeis: ["HAV829104", "HAV829105", "HAV829106", "HAV829107"],
     warranty: "2 Years on Product & 5 Years on Inner Tank",
@@ -311,10 +543,59 @@ export const initialInventory = [
     mrp: 1295,
     stock: 8,
     lowStockThreshold: 3,
+    rack: "APPLIANCE-BAY",
+    bin: "BAY-03",
+    locations: [
+      { rack: "APPLIANCE-BAY", bin: "BAY-03", qty: 8 }
+    ],
+    receivedDate: "2026-07-15",
+    agingDays: 82, // 60-90 Days Aging Stock
     barcode: "PHI-IRN-GC181",
     imeis: [],
     warranty: "2 Years Brand Warranty",
     status: "Active",
+  }
+];
+
+export const initialWarrantyClaims = [
+  {
+    id: "CLM-001",
+    type: "Customer", // Customer | Supplier
+    customerName: "Mohd Saleem",
+    phone: "98481 22334",
+    productName: "boAt Airdopes 141 ANC",
+    serialOrImei: "SN-BOAT-89211",
+    issueDescription: "Left earbud sound cracking & low volume",
+    claimDate: "2026-10-02",
+    status: "Sent to Service Center", // Received | Sent to Service Center | Replaced | Resolved
+    expectedReturnDate: "2026-10-10",
+    resolutionNotes: "Waiting for brand replacement unit"
+  },
+  {
+    id: "CLM-002",
+    type: "Customer",
+    customerName: "P. Venkat Reddy",
+    phone: "94408 99112",
+    productName: "OnePlus Nord CE 4 (Celadon Marble)",
+    serialOrImei: "864920194820194",
+    issueDescription: "Fingerprint scanner intermittent response",
+    claimDate: "2026-10-04",
+    status: "Received at Shop",
+    expectedReturnDate: "2026-10-08",
+    resolutionNotes: "Under local diagnostics"
+  },
+  {
+    id: "CLM-003",
+    type: "Supplier", // Supplier Return / RMA
+    supplierName: "Hyderabad Mobile Hub",
+    phone: "98490 11223",
+    productName: "Vivo Y200e 5G (Display Flicker DOA)",
+    serialOrImei: "863019284719286",
+    issueDescription: "Dead on Arrival - Screen flicker during first boot",
+    claimDate: "2026-09-29",
+    status: "Replacement Awaiting", // Return Initiated | Replacement Awaiting | Credit Note Received
+    expectedReturnDate: "2026-10-08",
+    resolutionNotes: "Handed over to supplier agent Ramesh"
   }
 ];
 

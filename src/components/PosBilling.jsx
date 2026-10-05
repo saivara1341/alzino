@@ -72,6 +72,12 @@ export default function PosBilling({
   const [isInterstate, setIsInterstate] = useState(false);
   
   // Checkout modal / complete state
+  const [showPaymentVerifyModal, setShowPaymentVerifyModal] = useState(false);
+  const [cashTendered, setCashTendered] = useState('');
+  const [upiTxnRef, setUpiTxnRef] = useState('');
+  const [cardAuthCode, setCardAuthCode] = useState('');
+  const [splitCashAmount, setSplitCashAmount] = useState(0);
+  const [splitUpiAmount, setSplitUpiAmount] = useState(0);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [completedInvoice, setCompletedInvoice] = useState(null);
 
@@ -390,13 +396,22 @@ export default function PosBilling({
     setPaidAmount(grandTotal);
   }, [grandTotal]);
 
-  // Handle Checkout / Invoice Generation
-  const handleCompleteSale = () => {
+  // Step 1: Open Payment Verification Modal (NO invoice or stock deduction yet)
+  const handleInitiatePayment = () => {
     if (cart.length === 0) {
-      alert("Cart is empty!");
+      alert("Cart is empty! Add items to cart first.");
       return;
     }
+    setCashTendered(grandTotal);
+    setUpiTxnRef('');
+    setCardAuthCode('');
+    setSplitCashAmount(Math.round(grandTotal / 2));
+    setSplitUpiAmount(grandTotal - Math.round(grandTotal / 2));
+    setShowPaymentVerifyModal(true);
+  };
 
+  // Step 2: Finalize Sale ONLY AFTER Payment is Confirmed
+  const handleConfirmAndGenerateInvoice = (verifiedPaymentRef = '') => {
     const prefix = isNonGst ? 'ALZ-EST' : 'ALZ-INV';
     const invoiceNo = `${prefix}-${String(invoices.length + 83).padStart(4, '0')}`;
     const today = new Date().toISOString().split('T')[0];
@@ -419,6 +434,9 @@ export default function PosBilling({
       customerAddress: customerAddress.trim() || 'Bodhan, Telangana',
       customerGstin: isNonGst ? '' : customerGstin.trim(),
       paymentMode,
+      paymentStatus: paymentMode === 'Khata' ? 'KHATA_DUE' : 'PAID',
+      paymentConfirmedAt: new Date().toISOString(),
+      paymentRef: verifiedPaymentRef || upiTxnRef || cardAuthCode || (paymentMode === 'Cash' ? 'CASH_VERIFIED' : 'CONFIRMED'),
       notes: invoiceNotes.trim(),
       items: cart.map(item => ({
         id: item.id,
@@ -434,6 +452,8 @@ export default function PosBilling({
         total: item.rate * item.qty,
         profit: (item.rate - item.buyPrice) * item.qty,
         warranty: item.warranty || '',
+        rack: item.rack || 'R-01',
+        bin: item.bin || 'B-01'
       })),
       taxableAmount: totalTaxable,
       cgstTotal,
@@ -447,7 +467,7 @@ export default function PosBilling({
       isInterstate,
     };
 
-    // Update Inventory stock and remove sold IMEIs (skip custom items)
+    // Deduct stock and remove sold IMEIs (skip custom items)
     setInventory(prev => prev.map(invItem => {
       const cartItem = cart.find(c => c.id === invItem.id);
       if (cartItem) {
@@ -490,9 +510,12 @@ export default function PosBilling({
       });
     }
 
-    // Save Invoice
+    // Save final verified invoice
     setInvoices(prev => [newInvoice, ...prev]);
     setCompletedInvoice(newInvoice);
+
+    // Close payment modal and open final print modal
+    setShowPaymentVerifyModal(false);
     setShowCheckoutModal(true);
 
     try {
@@ -818,14 +841,19 @@ export default function PosBilling({
                         <span className="mono-tag" style={{ fontSize: '0.62rem' }}>
                           {prod.brand}
                         </span>
-                        <span style={{
-                          fontSize: '0.68rem',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 600,
-                          color: isOut ? 'var(--status-red)' : isLowStock ? 'var(--status-amber)' : 'var(--status-green)',
-                        }}>
-                          {isOut ? 'Out' : `${prod.stock} in stock`}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <span className="mono-tag" style={{ fontSize: '0.6rem', background: 'var(--illoca-blue-subtle)', color: 'var(--accent-primary)', fontWeight: 700 }} title="Warehouse Storage Coordinates">
+                            📍 {prod.rack || 'R-01'}/{prod.bin || 'B-01'}
+                          </span>
+                          <span style={{
+                            fontSize: '0.68rem',
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 600,
+                            color: isOut ? 'var(--status-red)' : isLowStock ? 'var(--status-amber)' : 'var(--status-green)',
+                          }}>
+                            {isOut ? 'Out' : `${prod.stock} in stock`}
+                          </span>
+                        </div>
                       </div>
 
                       <h4 style={{ fontSize: '0.84rem', fontWeight: 600, marginBottom: '0.2rem', lineHeight: 1.25 }}>
@@ -1242,22 +1270,22 @@ export default function PosBilling({
               </div>
             </div>
 
-            {/* Checkout Button */}
+            {/* Proceed to Payment Verification Button */}
             <button
-              onClick={handleCompleteSale}
+              onClick={handleInitiatePayment}
               disabled={cart.length === 0}
               className="btn-primary"
               style={{
                 marginTop: '0.75rem',
                 width: '100%',
                 justifyContent: 'center',
-                padding: '0.7rem',
-                fontSize: '0.92rem',
+                padding: '0.75rem',
+                fontSize: '0.95rem',
                 opacity: cart.length === 0 ? 0.5 : 1
               }}
             >
               <CheckCircle2 size={16} />
-              <span>Complete Sale · ₹{grandTotal.toLocaleString()}</span>
+              <span>Proceed to Payment · ₹{grandTotal.toLocaleString()}</span>
             </button>
           </div>
         </div>
@@ -1787,6 +1815,360 @@ export default function PosBilling({
                 <span>Save & Print A4</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAYMENT VERIFICATION MODAL — Bill payment receive hone ke baad hi generate/print ho */}
+      {showPaymentVerifyModal && (
+        <div className="drawer-overlay no-print" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 3000 }}>
+          <div className="illoca-card animate-fade-in" style={{ maxWidth: '540px', width: '100%', padding: '1.5rem', background: 'var(--surface-primary)', maxHeight: '92vh', overflowY: 'auto' }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--border-color)' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span className="mono-tag" style={{ background: 'var(--status-amber-bg)', color: 'var(--status-amber)', fontWeight: 800 }}>
+                    ⚠️ STEP 1: PAYMENT VERIFICATION
+                  </span>
+                </div>
+                <h3 style={{ margin: '0.35rem 0 0 0', fontSize: '1.25rem', fontWeight: 800 }}>
+                  Collect & Confirm Payment
+                </h3>
+                <p style={{ margin: '0.15rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  Final Invoice # and stock deduction will occur only after payment is received.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowPaymentVerifyModal(false)}
+                className="btn-secondary"
+                style={{ padding: '0.3rem 0.55rem' }}
+                title="Cancel & Return to Cart"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Bill Amount Spotlight Card */}
+            <div style={{
+              background: 'var(--surface-card)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              padding: '1rem',
+              marginBottom: '1.25rem',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  Net Amount To Collect
+                </div>
+                <div style={{ fontSize: '1.85rem', fontWeight: 900, color: 'var(--accent-primary)', fontFamily: 'var(--font-heading)' }}>
+                  ₹{grandTotal.toLocaleString()}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  {cart.length} Items • Customer: <strong>{customerName || 'Counter Customer'}</strong>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <span className="mono-tag" style={{
+                  background: isNonGst ? 'var(--status-amber-bg)' : 'var(--status-green-bg)',
+                  color: isNonGst ? 'var(--status-amber)' : 'var(--status-green)',
+                  fontWeight: 700
+                }}>
+                  {isNonGst ? 'Non-GST Estimate' : 'GST Tax Invoice'}
+                </span>
+                {customerPhone && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    📱 {customerPhone}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Payment Method Tabs */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label className="input-label" style={{ marginBottom: '0.4rem', fontWeight: 700 }}>
+                Select Received Payment Method:
+              </label>
+              <div className="segmented-bar" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                {[
+                  { id: 'UPI', label: '📱 UPI / QR' },
+                  { id: 'Cash', label: '💵 Cash' },
+                  { id: 'Card', label: '💳 Card' },
+                  { id: 'Khata', label: '📒 Khata' },
+                ].map(pm => (
+                  <button
+                    key={pm.id}
+                    onClick={() => setPaymentMode(pm.id)}
+                    className={`segmented-item ${paymentMode === pm.id ? 'active-blue' : ''}`}
+                    style={{ textAlign: 'center', padding: '0.5rem 0.25rem', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    {pm.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* 1. UPI QR PAYMENT PANEL */}
+            {/* ========================================================================= */}
+            {paymentMode === 'UPI' && (
+              <div style={{
+                background: 'var(--surface-primary)',
+                border: '1.5px solid var(--accent-primary)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.15rem',
+                marginBottom: '1.25rem',
+                textAlign: 'center'
+              }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '0.5rem' }}>
+                  Ask Customer to Scan Dynamic UPI QR Code
+                </div>
+                
+                <div style={{
+                  background: '#FFFFFF',
+                  padding: '0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'inline-block',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  marginBottom: '0.75rem'
+                }}>
+                  <img
+                    src={getUpiQrUrl(shopConfig.upiId, shopConfig.name, grandTotal, 'BILL')}
+                    alt="Scan UPI QR Code"
+                    style={{ width: '190px', height: '190px', display: 'block', margin: '0 auto' }}
+                  />
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0A0D14', marginTop: '0.35rem' }}>
+                    Pay: ₹{grandTotal.toLocaleString()}
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                  UPI ID: <strong style={{ color: 'var(--text-primary)' }}>{shopConfig.upiId}</strong> ({shopConfig.name})
+                </div>
+
+                <div style={{ textAlign: 'left', marginBottom: '0.85rem' }}>
+                  <label className="input-label" style={{ fontSize: '0.75rem' }}>
+                    UPI Reference / UTR Number (Optional):
+                  </label>
+                  <input
+                    type="text"
+                    value={upiTxnRef}
+                    onChange={(e) => setUpiTxnRef(e.target.value)}
+                    placeholder="e.g. 428190284910"
+                    className="input-field"
+                    style={{ fontSize: '0.85rem', padding: '0.45rem 0.65rem' }}
+                  />
+                </div>
+
+                <button
+                  onClick={() => handleConfirmAndGenerateInvoice(upiTxnRef ? `UPI:${upiTxnRef}` : 'UPI:QR_CONFIRMED')}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontSize: '0.95rem' }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Confirm UPI Payment Received (₹{grandTotal.toLocaleString()})</span>
+                </button>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 2. CASH PAYMENT PANEL */}
+            {/* ========================================================================= */}
+            {paymentMode === 'Cash' && (
+              <div style={{
+                background: 'var(--surface-primary)',
+                border: '1.5px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.15rem',
+                marginBottom: '1.25rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontWeight: 800, fontSize: '0.9rem' }}>💵 Cash Payment Details</span>
+                  <span className="mono-tag" style={{ background: 'var(--status-green-bg)', color: 'var(--status-green)' }}>
+                    Tender & Change
+                  </span>
+                </div>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label className="input-label">Cash Received from Customer (₹):</label>
+                  <input
+                    type="number"
+                    value={cashTendered}
+                    onChange={(e) => setCashTendered(e.target.value)}
+                    placeholder="Enter cash given by customer"
+                    className="input-field"
+                    style={{ fontSize: '1.15rem', fontWeight: 800, padding: '0.5rem 0.75rem' }}
+                  />
+                </div>
+
+                {/* Quick Cash Chips */}
+                <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
+                  {[
+                    { label: `Exact (₹${grandTotal})`, val: grandTotal },
+                    { label: '₹500', val: 500 },
+                    { label: '₹1,000', val: 1000 },
+                    { label: '₹2,000', val: 2000 },
+                    { label: '₹5,000', val: 5000 },
+                  ].filter(c => c.val >= grandTotal || c.val === grandTotal).map((chip, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCashTendered(chip.val)}
+                      className="btn-secondary"
+                      style={{ padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Live Return Change Calculator */}
+                <div style={{
+                  background: 'var(--surface-card)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-color)',
+                  padding: '0.75rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '1rem'
+                }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Change to Return to Customer:
+                  </span>
+                  <span style={{
+                    fontSize: '1.25rem',
+                    fontWeight: 900,
+                    color: Number(cashTendered) >= grandTotal ? 'var(--status-green)' : 'var(--status-amber)'
+                  }}>
+                    ₹{Math.max(0, (Number(cashTendered) || grandTotal) - grandTotal).toLocaleString()}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => handleConfirmAndGenerateInvoice('CASH:TENDER_VERIFIED')}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontSize: '0.95rem' }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Confirm Cash Received (₹{grandTotal.toLocaleString()})</span>
+                </button>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 3. CARD PAYMENT PANEL */}
+            {/* ========================================================================= */}
+            {paymentMode === 'Card' && (
+              <div style={{
+                background: 'var(--surface-primary)',
+                border: '1.5px solid var(--border-color)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.15rem',
+                marginBottom: '1.25rem'
+              }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                  💳 Card Terminal / POS Machine Swipe
+                </div>
+                <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Swipe / Tap credit or debit card for ₹{grandTotal.toLocaleString()} on your physical EDC terminal.
+                </p>
+
+                <div style={{ marginBottom: '0.85rem' }}>
+                  <label className="input-label">Terminal Auth / Approval Code (Optional):</label>
+                  <input
+                    type="text"
+                    value={cardAuthCode}
+                    onChange={(e) => setCardAuthCode(e.target.value)}
+                    placeholder="e.g. AUTH-88219"
+                    className="input-field"
+                    style={{ fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <button
+                  onClick={() => handleConfirmAndGenerateInvoice(cardAuthCode ? `CARD:${cardAuthCode}` : 'CARD:SWIPE_VERIFIED')}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontSize: '0.95rem' }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Confirm Card Swipe Approved (₹{grandTotal.toLocaleString()})</span>
+                </button>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* 4. KHATA CREDIT SALE PANEL */}
+            {/* ========================================================================= */}
+            {paymentMode === 'Khata' && (
+              <div style={{
+                background: 'var(--surface-primary)',
+                border: '1.5px solid var(--status-amber)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.15rem',
+                marginBottom: '1.25rem'
+              }}>
+                <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--status-amber)', marginBottom: '0.5rem' }}>
+                  📒 Customer Credit / Khata Sale Authorization
+                </div>
+                <p style={{ margin: '0 0 0.85rem 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  This bill of <strong>₹{grandTotal.toLocaleString()}</strong> will be added to customer's ledger due balance.
+                </p>
+
+                <div style={{
+                  background: 'var(--surface-card)',
+                  padding: '0.65rem 0.85rem',
+                  borderRadius: 'var(--radius-sm)',
+                  marginBottom: '1rem',
+                  fontSize: '0.82rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span>Customer Name:</span>
+                    <strong>{customerName || 'Customer'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span>Phone:</span>
+                    <strong>{customerPhone || 'Not specified'}</strong>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--status-red)' }}>
+                    <span>Amount to be Added to Khata:</span>
+                    <strong>₹{grandTotal.toLocaleString()}</strong>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleConfirmAndGenerateInvoice('KHATA:CREDIT_AUTHORIZED')}
+                  className="btn-primary"
+                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', fontSize: '0.95rem', background: 'var(--status-amber)', borderColor: 'var(--status-amber)', color: '#000' }}
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Confirm Khata Credit Sale (₹{grandTotal.toLocaleString()})</span>
+                </button>
+              </div>
+            )}
+
+            {/* Security Guarantee Note */}
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.05)',
+              border: '1px solid var(--border-accent)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.65rem 0.85rem',
+              fontSize: '0.74rem',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <ShieldCheck size={16} color="var(--accent-primary)" />
+              <span>
+                <strong>Payment Confirmation Safeguard Active:</strong> Final invoice barcode, sequential invoice number, and stock deduction will only trigger upon confirming payment above.
+              </span>
+            </div>
+
           </div>
         </div>
       )}

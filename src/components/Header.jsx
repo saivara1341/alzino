@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Menu,
   X,
+  LayoutDashboard,
   ShoppingCart, 
   Smartphone, 
   Wrench, 
@@ -45,6 +46,7 @@ export default function Header({
   }, [menuOpen]);
 
   const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, hotkey: 'F1' },
     { id: 'pos', label: 'POS Billing', icon: ShoppingCart, hotkey: 'F2' },
     { id: 'inventory', label: 'Stock & IMEIs', icon: Package, count: lowStockCount || 5, alert: lowStockCount > 0 },
     { id: 'used-phones', label: 'Used or Refurbished Mobiles', icon: Smartphone, badge: 'Aadhaar' },

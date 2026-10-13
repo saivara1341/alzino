@@ -810,20 +810,21 @@ export default function ProductScanDetailsModal({
           {role === 'customer' ? (
             <button
               type="button"
+              disabled={effectivePrice <= 0}
               onClick={() => {
-                if (onAddToCart) onAddToCart(product);
+                if (onAddToCart) onAddToCart(product, effectivePrice);
                 onClose();
               }}
               style={{
                 flex: 1,
-                backgroundColor: '#0F251E',
+                backgroundColor: effectivePrice > 0 ? '#0F251E' : '#6B7280',
                 color: '#FFFFFF',
                 border: 'none',
                 borderRadius: '12px',
                 padding: '0.75rem 1rem',
                 fontWeight: 800,
                 fontSize: '0.85rem',
-                cursor: 'pointer',
+                cursor: effectivePrice > 0 ? 'pointer' : 'not-allowed',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -832,7 +833,7 @@ export default function ProductScanDetailsModal({
               }}
             >
               <ShoppingCart size={16} />
-              <span>Add to Cart (₹{effectivePrice.toLocaleString()})</span>
+              <span>{effectivePrice > 0 ? `Add to Cart (₹${effectivePrice.toLocaleString()})` : 'Price unavailable'}</span>
             </button>
           ) : (
             <button

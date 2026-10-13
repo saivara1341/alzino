@@ -57,7 +57,7 @@ import { findProductFromScan } from '../utils/productTerms';
 import AlzinoLogo from './AlzinoLogo';
 import { getSupabaseClient, isSupabaseConfigured } from '../utils/supabaseClient';
 import { getAvailableCategories } from '../utils/customTaxonomy';
-import { isRefurbishedProduct, isSmartphoneProduct } from '../utils/storefrontProductRules';
+import { firstPositiveAmount, isRefurbishedProduct, isSmartphoneProduct } from '../utils/storefrontProductRules';
 
 const InstagramIcon = ({ size = 18, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -202,6 +202,7 @@ export default function CustomerStorefront({
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('featured'); 
   const [selectedProductModal, setSelectedProductModal] = useState(null);
+  const [cartPriceOverrides, setCartPriceOverrides] = useState({});
   const [isStorefrontScannerOpen, setIsStorefrontScannerOpen] = useState(false);
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
@@ -405,8 +406,8 @@ export default function CustomerStorefront({
         const department = isAppliance ? 'appliances' : (isAccessory ? 'accessories' : 'mobiles');
         const agingDays = getAgingDays(item);
         const hasOffer = item.offer && item.offer.pct > 0;
-        const regularPrice = item.offer?.regularPrice || item.mrp || Math.round((item.sellPrice || 0) * 1.08);
-        const sellPrice = item.sellPrice || 0;
+        const sellPrice = firstPositiveAmount(item.sellPrice, item.price, item.targetSellPrice, item.expectedSellingPrice);
+        const regularPrice = firstPositiveAmount(item.offer?.regularPrice, item.mrp, Math.round(sellPrice * 1.08));
         const discount = regularPrice > sellPrice ? Math.round(((regularPrice - sellPrice) / regularPrice) * 100) : 0;
 
         let condition = isUsedMobile
@@ -495,31 +496,43 @@ export default function CustomerStorefront({
   }, [inventory, usedPurchases, publicCatalog]);
 
   // Cart Quantities & Helpers
-  const addToCart = (product) => {
+  const addToCart = (product, priceOverride) => {
+    const productId = String(product.id);
+    const validPrice = firstPositiveAmount(priceOverride);
+    if (!validPrice && !firstPositiveAmount(product.price, product.sellPrice)) return;
+    if (validPrice > 0) {
+      setCartPriceOverrides(prev => ({ ...prev, [productId]: validPrice }));
+    }
     setCart(prev => ({
       ...prev,
-      [product.id]: (prev[product.id] || 0) + 1
+      [productId]: (prev[productId] || 0) + 1
     }));
   };
 
   const removeFromCart = (product) => {
-    setCart(prev => {
-      const cur = prev[product.id] || 0;
-      if (cur <= 1) {
+    const productId = String(product.id);
+    if ((cart[productId] || 0) <= 1) {
+      setCart(prev => {
         const next = { ...prev };
-        delete next[product.id];
+        delete next[productId];
         return next;
-      }
-      return { ...prev, [product.id]: cur - 1 };
-    });
+      });
+      setCartPriceOverrides(prev => {
+        const next = { ...prev };
+        delete next[productId];
+        return next;
+      });
+      return;
+    }
+    setCart(prev => ({ ...prev, [productId]: prev[productId] - 1 }));
   };
 
   const cartItems = useMemo(() => {
     return Object.entries(cart).map(([id, qty]) => {
       const prod = liveProducts.find(p => String(p.id) === String(id));
-      return prod ? { ...prod, qty } : null;
+      return prod ? { ...prod, price: firstPositiveAmount(cartPriceOverrides[id], prod.price, prod.sellPrice), qty } : null;
     }).filter(Boolean);
-  }, [cart, liveProducts]);
+  }, [cart, cartPriceOverrides, liveProducts]);
 
   const cartTotal = useMemo(() => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.qty), 0);
@@ -618,8 +631,8 @@ export default function CustomerStorefront({
   // available under Certified Refurbished.
   const fixedCategories = [
     { id: 'all', label: 'All Products', icon: LayoutGrid },
-    { id: 'smartphones', label: 'Smartphones & 5G', icon: Smartphone },
     { id: 'used-mobiles', label: 'Used Mobiles', icon: RefreshCw },
+    { id: 'smartphones', label: 'Smartphones & 5G', icon: Smartphone },
     { id: 'audio', label: 'Earbuds & Audio', icon: Headphones },
     { id: 'chargers', label: 'Fast Chargers & Cables', icon: Cable },
     { id: 'wearables', label: 'Smartwatches', icon: Watch },
@@ -1542,7 +1555,7 @@ export default function CustomerStorefront({
                     }}>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
                         <span className="storefront-card-price" style={{ fontSize: '1.18rem', fontWeight: 900, color: '#111827' }}>
-                          ₹{prod.price.toLocaleString()}
+                          {prod.price > 0 ? `₹${prod.price.toLocaleString()}` : 'Contact for price'}
                         </span>
                         {prod.mrp && prod.mrp > prod.price && (
                           <span className="storefront-card-mrp" style={{ fontSize: '0.72rem', color: '#9CA3AF', textDecoration: 'line-through' }}>
@@ -1669,15 +1682,16 @@ export default function CustomerStorefront({
                             addToCart(prod);
                           }}
                           className="storefront-card-btn"
+                          disabled={prod.price <= 0}
                           style={{
-                            backgroundColor: '#FFFFFF',
-                            color: '#0C5B43',
-                            border: '1.5px solid #0C5B43',
+                            backgroundColor: prod.price > 0 ? '#FFFFFF' : '#F3F4F6',
+                            color: prod.price > 0 ? '#0C5B43' : '#6B7280',
+                            border: `1.5px solid ${prod.price > 0 ? '#0C5B43' : '#D1D5DB'}`,
                             borderRadius: '8px',
                             padding: '0.45rem 0.25rem',
                             fontWeight: 800,
                             fontSize: '0.78rem',
-                            cursor: 'pointer',
+                            cursor: prod.price > 0 ? 'pointer' : 'not-allowed',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1687,7 +1701,7 @@ export default function CustomerStorefront({
                             boxSizing: 'border-box'
                           }}
                         >
-                          <span>+ ADD</span>
+                          <span>{prod.price > 0 ? '+ ADD' : 'Price unavailable'}</span>
                         </button>
                       )}
                     </div>
@@ -2033,8 +2047,8 @@ export default function CustomerStorefront({
           inventory={inventory}
           isOpen={!!selectedProductModal}
           onClose={() => setSelectedProductModal(null)}
-          onAddToCart={(prod) => {
-            addToCart(prod);
+          onAddToCart={(prod, price) => {
+            addToCart(prod, price);
             setIsCartOpen(true);
           }}
           shopConfig={shopConfig}

@@ -50,6 +50,8 @@ export const DEFAULT_PRODUCT_TERMS = [
   STANDARD_PRODUCT_TERMS_PRESETS[3].text
 ];
 
+import { getProductSellingPrice } from './storefrontProductRules';
+
 /**
  * Normalizes terms and conditions from any format (string, array of strings, or undefined)
  */
@@ -152,7 +154,7 @@ export function findAvailableColorsForProduct(product, inventory = []) {
       image: product.image || null,
       images: product.images || null,
       stock: product.stock || 0,
-      sellPrice: product.sellPrice,
+      sellPrice: getProductSellingPrice(product),
       mrp: product.mrp,
       ram: product.ram,
       storage: product.storage,
@@ -184,7 +186,7 @@ export function findAvailableColorsForProduct(product, inventory = []) {
             image: item.image || null,
             images: item.images || null,
             stock: item.stock || 0,
-            sellPrice: item.sellPrice,
+            sellPrice: getProductSellingPrice(item, getProductSellingPrice(product)),
             mrp: item.mrp,
             ram: item.ram,
             storage: item.storage,
@@ -211,7 +213,7 @@ export function findAvailableColorsForProduct(product, inventory = []) {
                 image: u.image || item.image || null,
                 images: item.images || null,
                 stock: 1,
-                sellPrice: item.sellPrice,
+                sellPrice: getProductSellingPrice(item, getProductSellingPrice(product)),
                 mrp: item.mrp,
                 ram: item.ram,
                 storage: item.storage,
@@ -238,7 +240,7 @@ export function findAvailableColorsForProduct(product, inventory = []) {
             image: u.image || product.image || null,
             images: product.images || null,
             stock: 1,
-            sellPrice: product.sellPrice,
+            sellPrice: getProductSellingPrice(product),
             mrp: product.mrp,
             ram: product.ram,
             storage: product.storage,

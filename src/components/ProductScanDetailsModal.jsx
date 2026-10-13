@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { ProductImageViewer } from './ProductImages';
 import { getRealProductImage } from './CustomerStorefront';
-import { firstPositiveAmount } from '../utils/storefrontProductRules';
+import { firstPositiveAmount, getProductSellingPrice } from '../utils/storefrontProductRules';
 import { 
   normalizeProductTerms, 
   findAvailableColorsForProduct, 
@@ -65,7 +65,7 @@ export default function ProductScanDetailsModal({
       colorHex: product.colorHex || '#333333',
       image: product.image,
       stock: product.stock,
-      sellPrice: firstPositiveAmount(product.sellPrice, product.price),
+      sellPrice: getProductSellingPrice(product),
       mrp: product.mrp
     };
   }, [availableColors, selectedColorKey, product]);
@@ -79,7 +79,7 @@ export default function ProductScanDetailsModal({
 
   if (!isOpen || !product) return null;
 
-  const effectivePrice = firstPositiveAmount(activeVariant.sellPrice, product.sellPrice, product.price);
+  const effectivePrice = getProductSellingPrice(activeVariant, getProductSellingPrice(product));
   const effectiveMrp = firstPositiveAmount(activeVariant.mrp, product.mrp, effectivePrice);
   const discountSavings = Math.max(0, effectiveMrp - effectivePrice);
   const discountPct = effectiveMrp > effectivePrice ? Math.round((discountSavings / effectiveMrp) * 100) : 0;

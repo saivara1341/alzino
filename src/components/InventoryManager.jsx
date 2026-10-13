@@ -572,7 +572,11 @@ export default function InventoryManager({
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.sellPrice) return;
+    const sellingPrice = Number(formData.sellPrice);
+    if (!formData.name || !Number.isFinite(sellingPrice) || sellingPrice <= 0) {
+      alert('Enter a selling price greater than ₹0 before saving this product.');
+      return;
+    }
     if (!editingItem && formData.category === 'Used Mobiles') {
       alert('Add used phones through the Used Phones section so purchase and IMEI records stay linked.');
       return;
@@ -2223,6 +2227,7 @@ export default function InventoryManager({
                 <label style={{ fontSize: '0.72rem', fontWeight: 700, display: 'block', marginBottom: '0.2rem' }}>Selling Price ₹ *</label>
                 <input
                   type="number"
+                  min="0.01"
                   placeholder="Sell ₹"
                   value={formData.sellPrice}
                   onChange={(e) => setFormData({ ...formData, sellPrice: e.target.value })}

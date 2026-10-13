@@ -57,7 +57,7 @@ import { findProductFromScan } from '../utils/productTerms';
 import AlzinoLogo from './AlzinoLogo';
 import { getSupabaseClient, isSupabaseConfigured } from '../utils/supabaseClient';
 import { getAvailableCategories } from '../utils/customTaxonomy';
-import { firstPositiveAmount, isRefurbishedProduct, isSmartphoneProduct } from '../utils/storefrontProductRules';
+import { firstPositiveAmount, getProductSellingPrice, isRefurbishedProduct, isSmartphoneProduct } from '../utils/storefrontProductRules';
 
 const InstagramIcon = ({ size = 18, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -348,7 +348,7 @@ export default function CustomerStorefront({
         const category = isUsed ? 'Used Mobiles' : rawCategory;
         const isAppliance = category === 'Home Appliances';
         const isAccessory = category === 'Mobile Accessories';
-        const price = Number(item.sell_price) || 0;
+        const price = getProductSellingPrice(item);
         return {
           id: item.id,
           name: item.name,
@@ -406,7 +406,7 @@ export default function CustomerStorefront({
         const department = isAppliance ? 'appliances' : (isAccessory ? 'accessories' : 'mobiles');
         const agingDays = getAgingDays(item);
         const hasOffer = item.offer && item.offer.pct > 0;
-        const sellPrice = firstPositiveAmount(item.sellPrice, item.price, item.targetSellPrice, item.expectedSellingPrice);
+        const sellPrice = getProductSellingPrice(item);
         const regularPrice = firstPositiveAmount(item.offer?.regularPrice, item.mrp, Math.round(sellPrice * 1.08));
         const discount = regularPrice > sellPrice ? Math.round(((regularPrice - sellPrice) / regularPrice) * 100) : 0;
 
@@ -432,6 +432,7 @@ export default function CustomerStorefront({
           department,
           brand: item.brand || cleanName.split(' ')[0] || (isUsedMobile ? 'Refurbished' : 'Samsung'),
           price: sellPrice,
+          sellPrice,
           mrp: regularPrice,
           discountPct: discount,
           stock: Number(item.stock) || 0,
@@ -457,7 +458,7 @@ export default function CustomerStorefront({
           if (item.id && inventory.some(i => i.id === item.id)) return;
 
           const buyP = Number(item.buyPrice || item.purchasePrice || 0);
-          const sellP = Number(item.sellPrice || item.targetSellPrice || item.expectedSellingPrice || (buyP > 0 ? Math.round(buyP * 1.18) : 0));
+          const sellP = getProductSellingPrice(item, buyP > 0 ? Math.round(buyP * 1.18) : 0);
           const mrpVal = Number(item.mrp || (sellP > 0 ? Math.round(sellP * 1.1) : 0));
           const disc = mrpVal > sellP ? Math.round(((mrpVal - sellP) / mrpVal) * 100) : 0;
           const uColor = item.color ? ` (${item.color})` : '';
@@ -473,6 +474,7 @@ export default function CustomerStorefront({
             department: 'mobiles',
             brand: item.brand || 'Refurbished',
             price: sellP,
+            sellPrice: sellP,
             mrp: mrpVal,
             discountPct: disc,
             stock: 1,
@@ -499,7 +501,7 @@ export default function CustomerStorefront({
   const addToCart = (product, priceOverride) => {
     const productId = String(product.id);
     const validPrice = firstPositiveAmount(priceOverride);
-    if (!validPrice && !firstPositiveAmount(product.price, product.sellPrice)) return;
+    if (!validPrice && !getProductSellingPrice(product)) return;
     if (validPrice > 0) {
       setCartPriceOverrides(prev => ({ ...prev, [productId]: validPrice }));
     }
@@ -530,7 +532,7 @@ export default function CustomerStorefront({
   const cartItems = useMemo(() => {
     return Object.entries(cart).map(([id, qty]) => {
       const prod = liveProducts.find(p => String(p.id) === String(id));
-      return prod ? { ...prod, price: firstPositiveAmount(cartPriceOverrides[id], prod.price, prod.sellPrice), qty } : null;
+      return prod ? { ...prod, price: firstPositiveAmount(cartPriceOverrides[id], getProductSellingPrice(prod)), qty } : null;
     }).filter(Boolean);
   }, [cart, cartPriceOverrides, liveProducts]);
 

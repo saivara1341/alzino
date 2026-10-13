@@ -550,6 +550,7 @@ export default function CustomerStorefront({
                         item.category !== 'Mobile Accessories';
         if (!isSmart) return false;
       }
+      if (selectedCategory === 'used-mobiles' && !isRefurbishedProduct(item)) return false;
       if (selectedCategory === 'audio') {
         const name = (item.name || '').toLowerCase();
         const cat = (item.category || '').toLowerCase();
@@ -627,6 +628,7 @@ export default function CustomerStorefront({
   const fixedCategories = [
     { id: 'all', label: 'All Products', icon: LayoutGrid },
     { id: 'smartphones', label: 'Smartphones & 5G', icon: Smartphone },
+    { id: 'used-mobiles', label: 'Used Mobiles', icon: RefreshCw },
     { id: 'audio', label: 'Earbuds & Audio', icon: Headphones },
     { id: 'chargers', label: 'Fast Chargers & Cables', icon: Cable },
     { id: 'wearables', label: 'Smartwatches', icon: Watch },
@@ -635,7 +637,7 @@ export default function CustomerStorefront({
     { id: 'appliances', label: '4K TVs & Appliances', icon: Tv },
     { id: 'clearance', label: 'Clearance Hub', icon: Flame },
   ];
-  const coveredCategories = new Set(['new mobiles', 'home appliances', 'mobile accessories']);
+  const coveredCategories = new Set(['new mobiles', 'used mobiles', 'home appliances', 'mobile accessories']);
   const dynamicCategories = getAvailableCategories(liveProducts)
     .filter(category => !coveredCategories.has(category.trim().toLowerCase()))
     .map(category => ({
@@ -654,6 +656,7 @@ export default function CustomerStorefront({
       counts[cat.id] = liveProducts.filter(item => {
         const cleanName = (item.name || '').toLowerCase();
         if (cat.id === 'smartphones') return (item.department === 'mobiles' || item.category === 'New Mobiles') && !isRefurbishedProduct(item);
+        if (cat.id === 'used-mobiles') return isRefurbishedProduct(item);
         if (cat.id === 'audio') return cleanName.includes('earbuds') || cleanName.includes('airpods') || cleanName.includes('airdopes') || cleanName.includes('audio') || cleanName.includes('headphone');
         if (cat.id === 'chargers') return cleanName.includes('charger') || cleanName.includes('adapter') || cleanName.includes('cable') || cleanName.includes('power bank');
         if (cat.id === 'wearables') return cleanName.includes('watch') || cleanName.includes('band') || cleanName.includes('pulse');

@@ -35,6 +35,11 @@ const WhatsAppIcon = ({ size = 18, color = "currentColor" }) => (
   </svg>
 );
 
+const firstPositiveAmount = (...values) => {
+  const amount = values.map(Number).find(value => Number.isFinite(value) && value > 0);
+  return amount ?? 0;
+};
+
 export default function ProductScanDetailsModal({
   product,
   inventory = [],
@@ -64,7 +69,7 @@ export default function ProductScanDetailsModal({
       colorHex: product.colorHex || '#333333',
       image: product.image,
       stock: product.stock,
-      sellPrice: product.sellPrice ?? product.price,
+      sellPrice: firstPositiveAmount(product.sellPrice, product.price),
       mrp: product.mrp
     };
   }, [availableColors, selectedColorKey, product]);
@@ -78,8 +83,8 @@ export default function ProductScanDetailsModal({
 
   if (!isOpen || !product) return null;
 
-  const effectivePrice = Number(activeVariant.sellPrice ?? product.sellPrice ?? product.price ?? 0);
-  const effectiveMrp = Number(activeVariant.mrp ?? product.mrp ?? effectivePrice);
+  const effectivePrice = firstPositiveAmount(activeVariant.sellPrice, product.sellPrice, product.price);
+  const effectiveMrp = firstPositiveAmount(activeVariant.mrp, product.mrp, effectivePrice);
   const discountSavings = Math.max(0, effectiveMrp - effectivePrice);
   const discountPct = effectiveMrp > effectivePrice ? Math.round((discountSavings / effectiveMrp) * 100) : 0;
 

@@ -53,6 +53,7 @@ import {
   getAvailableCategories,
   normalizeProductCategory,
   productCategoriesMatch,
+  isUsedMobileProduct,
   getAvailableBrandsForCategory,
   saveCustomCategory,
   saveCustomBrand,
@@ -78,7 +79,8 @@ export default function InventoryManager({
   shopConfig,
   onQuickBill,
   initialSearchTerm,
-  onClearInitialSearchTerm
+  onClearInitialSearchTerm,
+  onOpenUsedMobileIntake
 }) {
   // View mode: 'cards' | 'table'
   const [viewMode, setViewMode] = useState('cards');
@@ -343,7 +345,12 @@ export default function InventoryManager({
   // Fast Filter
   const filteredProducts = useMemo(() => {
     return inventory.filter(item => {
-      const matchesCategory = categoryFilter === 'All' || productCategoriesMatch(item.category, categoryFilter);
+      const isUsedItem = isUsedMobileProduct(item);
+      const normalizedFilter = normalizeProductCategory(categoryFilter);
+      const matchesCategory = categoryFilter === 'All' ||
+        (normalizedFilter === 'Used Mobiles' && isUsedItem) ||
+        (productCategoriesMatch(item.category, categoryFilter) &&
+          !(normalizedFilter === 'New Mobiles' && isUsedItem));
       const matchesBrand = brandFilter === 'All' || item.brand === brandFilter;
 
       const isLow = item.stock > 0 && item.stock <= (item.lowStockThreshold || 2);
@@ -578,7 +585,8 @@ export default function InventoryManager({
       return;
     }
     if (!editingItem && formData.category === 'Used Mobiles') {
-      alert('Add used phones through the Used Phones section so purchase and IMEI records stay linked.');
+      alert('Used phones need seller KYC, ID proof and purchase details. You will be taken to Used Mobiles & Refurbished Lifecycle to complete the intake and add the handset to Stock Hub and the storefront.');
+      onOpenUsedMobileIntake?.();
       return;
     }
     if (['New Mobiles', 'Used Mobiles'].includes(formData.category) && (!formData.imei1?.trim() || !formData.imei2?.trim())) {

@@ -73,6 +73,13 @@ const WhatsAppIcon = ({ size = 16, color = "currentColor" }) => (
   </svg>
 );
 
+const isRefurbishedProduct = (item) => {
+  const category = String(item?.category || '').trim().toLowerCase();
+  const name = String(item?.name || '').trim().toLowerCase();
+  return item?.type === 'refurbished' || category === 'used mobiles' ||
+    name.startsWith('used ') || name.includes('refurbished') || name.includes('pre-owned');
+};
+
 export function getRealProductImage(product) {
   if (product?.image && typeof product.image === 'string' && (product.image.startsWith('http') || product.image.startsWith('data:image/') || product.image.startsWith('blob:'))) {
     return product.image;
@@ -537,7 +544,7 @@ export default function CustomerStorefront({
       // 1. Category Filter
       if (selectedCategory === 'smartphones') {
         const isSmart = (item.department === 'mobiles' || item.category === 'New Mobiles') && 
-                        item.type !== 'refurbished' && 
+                        !isRefurbishedProduct(item) &&
                         item.category !== 'Mobile Accessories';
         if (!isSmart) return false;
       }
@@ -572,7 +579,7 @@ export default function CustomerStorefront({
         if (!isAppliance) return false;
       }
       if (selectedCategory === 'refurbished') {
-        if (item.type !== 'refurbished' && item.category !== 'Used Mobiles') return false;
+        if (!isRefurbishedProduct(item)) return false;
       }
       if (selectedCategory === 'accessories') {
         if (item.department !== 'accessories' && item.category !== 'Mobile Accessories') return false;
@@ -644,13 +651,13 @@ export default function CustomerStorefront({
       if (cat.id === 'all') return;
       counts[cat.id] = liveProducts.filter(item => {
         const cleanName = (item.name || '').toLowerCase();
-        if (cat.id === 'smartphones') return (item.department === 'mobiles' || item.category === 'New Mobiles') && item.type !== 'refurbished';
+        if (cat.id === 'smartphones') return (item.department === 'mobiles' || item.category === 'New Mobiles') && !isRefurbishedProduct(item);
         if (cat.id === 'audio') return cleanName.includes('earbuds') || cleanName.includes('airpods') || cleanName.includes('airdopes') || cleanName.includes('audio') || cleanName.includes('headphone');
         if (cat.id === 'chargers') return cleanName.includes('charger') || cleanName.includes('adapter') || cleanName.includes('cable') || cleanName.includes('power bank');
         if (cat.id === 'wearables') return cleanName.includes('watch') || cleanName.includes('band') || cleanName.includes('pulse');
         if (cat.id === 'protection') return cleanName.includes('glass') || cleanName.includes('case') || cleanName.includes('cover') || cleanName.includes('armor');
         if (cat.id === 'appliances') return item.type === 'appliance' || item.department === 'appliances' || item.category === 'Home Appliances';
-        if (cat.id === 'refurbished') return item.type === 'refurbished' || item.category === 'Used Mobiles';
+        if (cat.id === 'refurbished') return isRefurbishedProduct(item);
         if (cat.id === 'clearance') return (item.discountPct && item.discountPct >= 10) || (item.condition && (item.condition.includes('Clearance') || item.condition.includes('Deal')));
         if (cat.productCategory) return (item.category || '').trim().toLowerCase() === cat.productCategory.trim().toLowerCase();
         return false;

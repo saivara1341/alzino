@@ -185,15 +185,7 @@ export default function InventoryManager({
     return getAvailableCategories(inventory);
   }, [inventory, taxonomyVer]);
 
-  const productEntryCategories = useMemo(() => {
-    const categoriesForEntry = availableCategories.filter(category => category !== 'Used Mobiles');
-    // Keep an existing used phone's category visible while editing legacy stock,
-    // but never offer it for a new generic stock entry.
-    if (editingItem?.category === 'Used Mobiles' && !categoriesForEntry.includes('Used Mobiles')) {
-      categoriesForEntry.push('Used Mobiles');
-    }
-    return categoriesForEntry;
-  }, [availableCategories, editingItem]);
+  const productEntryCategories = availableCategories;
 
   const categories = useMemo(() => {
     return ['All', ...availableCategories];
@@ -406,8 +398,7 @@ export default function InventoryManager({
     setIsCustomStorage(false);
     setIsCustomRam(false);
     setBarcodeMode('generate');
-    const categoriesForEntry = availableCategories.filter(category => category !== 'Used Mobiles');
-    const defaultCat = categoriesForEntry.includes('New Mobiles') ? 'New Mobiles' : (categoriesForEntry[0] || 'New Mobiles');
+    const defaultCat = availableCategories.includes('New Mobiles') ? 'New Mobiles' : (availableCategories[0] || 'New Mobiles');
     const validBrands = getAvailableBrandsForCategory(defaultCat, inventory);
     const defaultBrand = validBrands.includes('Samsung') ? 'Samsung' : (validBrands[0] || 'Universal');
     setFormData({

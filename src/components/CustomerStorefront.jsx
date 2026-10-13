@@ -56,6 +56,7 @@ import CameraBarcodeScannerModal from './CameraBarcodeScannerModal';
 import { findProductFromScan } from '../utils/productTerms';
 import AlzinoLogo from './AlzinoLogo';
 import { getSupabaseClient, isSupabaseConfigured } from '../utils/supabaseClient';
+import { getAvailableCategories } from '../utils/customTaxonomy';
 
 const InstagramIcon = ({ size = 18, color = "currentColor" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -581,6 +582,10 @@ export default function CustomerStorefront({
                             (item.condition && (item.condition.includes('Clearance') || item.condition.includes('Deal') || item.condition.includes('Off')));
         if (!hasDiscount) return false;
       }
+      if (selectedCategory.startsWith('category:')) {
+        const category = selectedCategory.slice('category:'.length);
+        if ((item.category || '').trim().toLowerCase() !== category.toLowerCase()) return false;
+      }
 
       // 2. Search Query
       if (searchTerm.trim()) {
@@ -607,8 +612,10 @@ export default function CustomerStorefront({
     return result;
   }, [liveProducts, selectedCategory, searchTerm, sortBy]);
 
-  // Quick Category Pills
-  const categoriesList = [
+  // Keep the familiar storefront shortcuts and add tabs for categories created
+  // in Stock Hub. Used Mobiles gets its own category tab as well as remaining
+  // available under Certified Refurbished.
+  const fixedCategories = [
     { id: 'all', label: 'All Products', icon: LayoutGrid },
     { id: 'smartphones', label: 'Smartphones & 5G', icon: Smartphone },
     { id: 'audio', label: 'Earbuds & Audio', icon: Headphones },
@@ -619,6 +626,16 @@ export default function CustomerStorefront({
     { id: 'appliances', label: '4K TVs & Appliances', icon: Tv },
     { id: 'clearance', label: 'Clearance Hub', icon: Flame },
   ];
+  const coveredCategories = new Set(['new mobiles', 'home appliances', 'mobile accessories']);
+  const dynamicCategories = getAvailableCategories(liveProducts)
+    .filter(category => !coveredCategories.has(category.trim().toLowerCase()))
+    .map(category => ({
+      id: `category:${category}`,
+      label: category,
+      icon: category.trim().toLowerCase() === 'used mobiles' ? Smartphone : Package,
+      productCategory: category,
+    }));
+  const categoriesList = [...fixedCategories, ...dynamicCategories];
 
   // Category item counts for badges
   const categoryCounts = useMemo(() => {
@@ -635,6 +652,7 @@ export default function CustomerStorefront({
         if (cat.id === 'appliances') return item.type === 'appliance' || item.department === 'appliances' || item.category === 'Home Appliances';
         if (cat.id === 'refurbished') return item.type === 'refurbished' || item.category === 'Used Mobiles';
         if (cat.id === 'clearance') return (item.discountPct && item.discountPct >= 10) || (item.condition && (item.condition.includes('Clearance') || item.condition.includes('Deal')));
+        if (cat.productCategory) return (item.category || '').trim().toLowerCase() === cat.productCategory.trim().toLowerCase();
         return false;
       }).length;
     });

@@ -76,7 +76,7 @@ const WhatsAppIcon = ({ size = 16, color = "currentColor" }) => (
 const isRefurbishedProduct = (item) => {
   const category = String(item?.category || '').trim().toLowerCase();
   const name = String(item?.name || '').trim().toLowerCase();
-  return item?.type === 'refurbished' || category === 'used mobiles' ||
+  return item?.type === 'refurbished' || /^used mobiles?$/.test(category) ||
     name.startsWith('used ') || name.includes('refurbished') || name.includes('pre-owned');
 };
 
@@ -348,8 +348,9 @@ export default function CustomerStorefront({
   const liveProducts = useMemo(() => {
     const cloudProducts = isSupabaseConfigured()
       ? publicCatalog.map(item => {
-        const category = item.category || 'New Mobiles';
-        const isUsed = category === 'Used Mobiles';
+        const rawCategory = item.category || 'New Mobiles';
+        const isUsed = /^used mobiles?$/i.test(String(rawCategory).trim());
+        const category = isUsed ? 'Used Mobiles' : rawCategory;
         const isAppliance = category === 'Home Appliances';
         const isAccessory = category === 'Mobile Accessories';
         const price = Number(item.sell_price) || 0;
@@ -360,6 +361,7 @@ export default function CustomerStorefront({
           department: isAppliance ? 'appliances' : (isAccessory ? 'accessories' : 'mobiles'),
           brand: item.brand || item.name.split(' ')[0],
           price,
+          sellPrice: price,
           mrp: Number(item.mrp) || price,
           discountPct: item.mrp > price ? Math.round(((item.mrp - price) / item.mrp) * 100) : 0,
           stock: 1,
@@ -389,9 +391,9 @@ export default function CustomerStorefront({
         if (item.imeis && Array.isArray(item.imeis)) item.imeis.forEach(im => seenImeis.add(im));
         if (item.imei1) seenImeis.add(item.imei1);
 
-        const isUsedMobile = item.category === 'Used Mobiles' || 
+        const isUsedMobile = isRefurbishedProduct(item) ||
                              item.type === 'refurbished' || 
-                             cleanName.toLowerCase().startsWith('used ') || 
+                             cleanName.toLowerCase().startsWith('used ') ||
                              cleanName.toLowerCase().includes('refurbished') ||
                              cleanName.toLowerCase().includes('pre-owned');
 

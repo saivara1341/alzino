@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { getAuthenticatorAccessToken } from './authenticatorSession';
 
 export const DEFAULT_SUPABASE_URL = 'https://iaugdtkalwjcwnjadony.supabase.co';
 
@@ -52,9 +53,13 @@ export const getSupabaseClient = () => {
   lastUrl = url;
   lastKey = anonKey;
   cachedClient = createClient(url, anonKey, {
+    // The browser gets a short-lived ES256 JWT after server-side TOTP
+    // verification. No Supabase Auth email/password session is created.
+    accessToken: async () => getAuthenticatorAccessToken(),
     auth: {
-      persistSession: true,
-      autoRefreshToken: true
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false
     }
   });
 

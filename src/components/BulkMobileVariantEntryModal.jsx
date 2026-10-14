@@ -2435,7 +2435,7 @@ export default function BulkMobileVariantEntryModal({
                             <th style={{ padding: '0.5rem', textAlign: 'center' }}>Qty</th>
                             <th style={{ padding: '0.5rem' }}>IMEI 1</th>
                             <th style={{ padding: '0.5rem' }}>Selling ₹</th>
-                            <th style={{ padding: '0.5rem' }}>Cost ₹</th>
+                            <th style={{ padding: '0.5rem' }}>MRP ₹</th>
                             <th style={{ padding: '0.5rem' }}>Shelf</th>
                           </tr>
                         </thead>
@@ -2449,7 +2449,7 @@ export default function BulkMobileVariantEntryModal({
                               <td style={{ padding: '0.45rem', textAlign: 'center', fontWeight: 800 }}>{row.quantity}</td>
                               <td style={{ padding: '0.45rem', fontFamily: 'var(--font-mono)' }}>{row.imei1 || '—'}</td>
                               <td style={{ padding: '0.45rem', fontWeight: 800, color: '#10B981' }}>₹{row.sellPrice.toLocaleString()}</td>
-                              <td style={{ padding: '0.45rem' }}>₹{row.purchasePrice.toLocaleString()}</td>
+                              <td style={{ padding: '0.45rem' }}>₹{row.mrp.toLocaleString()}</td>
                               <td style={{ padding: '0.45rem', fontFamily: 'var(--font-mono)' }}>{row.rack}/{row.bin}</td>
                             </tr>
                           ))}

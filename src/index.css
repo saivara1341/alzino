@@ -645,7 +645,36 @@ input, select, textarea {
 .pos-product-catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-auto-rows: 140px;
+  align-content: start;
   gap: 0.65rem;
+}
+
+.pos-product-card {
+  box-sizing: border-box;
+  height: 140px;
+  min-width: 0;
+}
+
+.pos-product-card h4 {
+  min-height: 2.5em;
+  overflow-wrap: anywhere;
+}
+
+.pos-product-card > div:first-child > div:first-child > span:first-child {
+  max-width: 72%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-product-card > div:last-child {
+  flex-shrink: 0;
+}
+
+.pos-product-card button {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .repair-jobs-grid {
